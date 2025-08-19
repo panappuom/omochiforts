@@ -1,0 +1,45 @@
+{
+  "images": {
+    "smallWidth": 236,
+    "largeWidth": 1200,
+    "qualitySmall": 82,
+    "qualityLarge": 88,
+    "rebuildIfNewer": true,
+    "outputDir": "public/assets"
+  },
+  "layout": {
+    "columns": {
+      "sp": 2,
+      "sm": 3,
+      "md": 4,
+      "lg": 5,
+      "xlOpen": 6,
+      "xlClosed": 7
+    },
+    "gap": { "sp": { "x": 4, "y": 4 }, "pc": { "x": 16, "y": 16 } },
+    "tabs": { "align": "center" }
+  },
+  "gallery": {
+    "insertAdEvery": 20,
+    "lqip": true,
+    "infinite": { "batch": 60, "preRenderBatches": 2 }
+  },
+  "search": {
+    "mode": "AND",
+    "orDelimiter": "|",
+    "debounceMs": 80
+  },
+  "lightbox": {
+    "captionTpl": "この画像が含まれる販売作品 → {set}",
+    "linkFrom": "external",
+    "deepLinkParam": "img",
+    "preloadNeighbors": 1,
+    "zoom": true
+  },
+  "theme": { "dark": "system" },
+  "icon": "/favicon.svg",
+  "branding": {
+    "title": "My Illustration Gallery",
+    "icon": "/icon.svg"
+  }
+}

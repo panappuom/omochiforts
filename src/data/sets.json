@@ -1,0 +1,18 @@
+{
+  "zundamon100": {
+    "title": "ずんだもん100",
+    "link": "https://example.com/zundamon100",
+    "tags": ["笑顔", "かわいい"],
+    "characters": ["ずんだもん"],
+    "origin": "VOICEROID",
+    "nsfw": false
+  },
+  "nekosen": {
+    "title": "ネコ戦隊",
+    "link": "https://example.com/nekosen",
+    "tags": ["猫", "戦隊"],
+    "characters": ["ネコA", "ネコB"],
+    "origin": "オリジナル",
+    "nsfw": false
+  }
+}

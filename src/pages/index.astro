@@ -1,0 +1,91 @@
+---
+import Layout from "../components/Layout.astro";
+import images from "../data/images.index.json";
+import sets from "../data/sets.json";
+import cfg from "../config/site.config.json";
+
+// slugごとにグループ化して cover を選ぶ（最初の1枚）
+const bySlug = new Map();
+for (const img of images) {
+  if (!bySlug.has(img.slug)) bySlug.set(img.slug, []);
+  bySlug.get(img.slug).push(img);
+}
+const cards = [...bySlug.entries()].map(([slug, arr]) => {
+  // ファイル番号順っぽく name でソート（簡易）
+  arr.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  const cover = arr[0];
+  const meta = sets[slug] || { title: slug, link: "", tags: [] };
+  return {
+    slug,
+    title: meta.title ?? slug,
+    link: meta.link ?? "",
+    count: arr.length,
+    coverSrc: cover?.s ?? "",  // 無ければ空
+  };
+});
+// 画像一覧用ソート: slug 先頭の数値で「降順」→ 同一slug内は name の数値「昇順」
+const imagesSorted = [...images].sort((a, b) => {
+  const anum = parseInt((a.slug.split('_')[0] ?? ''), 10);
+  const bnum = parseInt((b.slug.split('_')[0] ?? ''), 10);
+  if (!Number.isNaN(anum) && !Number.isNaN(bnum) && anum !== bnum) return bnum - anum; // 降順
+  if (a.slug !== b.slug) return b.slug.localeCompare(a.slug, 'ja');
+  const an = parseInt(a.name, 10);
+  const bn = parseInt(b.name, 10);
+  if (!Number.isNaN(an) && !Number.isNaN(bn) && an !== bn) return an - bn; // 昇順
+  return a.name.localeCompare(b.name, 'ja');
+});
+// タブ配置（center切替）
+const layoutAny = (cfg as any)?.layout as any;
+const tabsCenter = layoutAny?.tabs?.align === 'center';
+---
+
+<Layout>
+  <main class="wrap">
+    <h1 class="title">ギャラリー</h1>
+    
+    <div class="tabwrap">
+      <input id="tab-images" type="radio" name="tab" checked />
+      <input id="tab-works" type="radio" name="tab" />
+      <div class={`tabs ${tabsCenter ? 'center' : ''}`} role="tablist">
+        <label for="tab-images" class="tab" role="tab" aria-controls="panel-images">画像</label>
+        <label for="tab-works" class="tab" role="tab" aria-controls="panel-works">作品</label>
+      </div>
+      <div class="panels">
+        <section id="panel-images" class="panel images" aria-label="images">
+          <div class="img-grid">
+            {imagesSorted.map((it) => (
+              <img
+                class="img"
+                src={it.s}
+                alt={`${it.slug}/${it.name}`}
+                loading="lazy"
+                decoding="async"
+                width={it.w}
+                height={it.h}
+              />
+            ))}
+          </div>
+        </section>
+        <section id="panel-works" class="panel works" aria-label="works">
+          <div class="grid">
+            {cards.map((c) => (
+              <a class="card" href={`/work/${c.slug}/`} aria-label={`${c.title} を開く`}>
+                <div class="thumb">
+                  {c.coverSrc ? (
+                    <img src={c.coverSrc} alt={c.title} loading="lazy" decoding="async" />
+                  ) : (
+                    <div class="ph" aria-hidden="true"></div>
+                  )}
+                </div>
+                <div class="meta">
+                  <div class="name">{c.title}</div>
+                  <div class="sub">{c.count} 枚</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</Layout>
