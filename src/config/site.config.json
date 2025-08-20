@@ -8,16 +8,16 @@
     "outputDir": "public/assets"
   },
   "layout": {
-    "columns": {
-      "sp": 2,
-      "sm": 3,
-      "md": 4,
-      "lg": 5,
-      "xlOpen": 6,
-      "xlClosed": 7
-    },
     "gap": { "sp": { "x": 4, "y": 4 }, "pc": { "x": 16, "y": 16 } },
-    "tabs": { "align": "center" }
+    "tabs": { "align": "center" },
+    "breakpoint": "768px",
+    "grid": {
+      "base": 2,
+      "bp": [
+        { "min": "768px",  "cols": 3 },
+        { "min": "1024px", "cols": 5 }
+      ]
+    }
   },
   "gallery": {
     "insertAdEvery": 20,
@@ -28,13 +28,6 @@
     "mode": "AND",
     "orDelimiter": "|",
     "debounceMs": 80
-  },
-  "lightbox": {
-    "captionTpl": "この画像が含まれる販売作品 → {set}",
-    "linkFrom": "external",
-    "deepLinkParam": "img",
-    "preloadNeighbors": 1,
-    "zoom": true
   },
   "theme": { "dark": "system" },
   "icon": "/favicon.svg",

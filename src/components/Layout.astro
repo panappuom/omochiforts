@@ -1,11 +1,48 @@
 ---
+import cfg from "../config/site.config.json";
+
+// gap/BPをconfigから
+const gap = cfg?.layout?.gap ?? {};
+const spx = ((gap.sp?.x) ?? 4) + "px";
+const spy = ((gap.sp?.y) ?? 4) + "px";
+const pcx = ((gap.pc?.x) ?? 16) + "px";
+const pcy = ((gap.pc?.y) ?? 16) + "px";
+const bp  = cfg?.layout?.breakpoint ?? "768px";
+
+// CSSはAstroのimportで読み込む（/srcを<link>しない）
+import "../styles/global.css";
 ---
 
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
     <title>Gallery</title>
-    <link rel="stylesheet" href="/src/styles/global.css" />
+
+    <!-- 設定駆動のCSSカスタムプロパティをSSRで注入（set:htmlでリテラル展開） -->
+    <style is:global set:html={`
+      :root{
+        --gx-sp: ${spx};
+        --gy-sp: ${spy};
+        --gx-pc: ${pcx};
+        --gy-pc: ${pcy};
+        /* 実際に使う値（デフォはSP） */
+        --gx: var(--gx-sp);
+        --gy: var(--gy-sp);
+      }
+      @media (min-width: ${bp}){
+        :root{ --gx: var(--gx-pc); --gy: var(--gy-pc); }
+      }
+    `} />
+    {(() => {
+      const grid = (cfg as any)?.layout?.grid ?? { base: 2, bp: [{ min: '768px', cols: 3 }, { min: '1024px', cols: 5 }] };
+      const base = Number(grid.base) || 2;
+      const bps = Array.isArray(grid.bp) ? grid.bp : [];
+      const rules = [
+        `.grid{ grid-template-columns: repeat(${base}, minmax(0,1fr)); }`,
+        ...bps.map((it: any) => `@media (min-width: ${it.min}){ .grid{ grid-template-columns: repeat(${Number(it.cols) || base}, minmax(0,1fr)); } }`)
+      ].join('\n');
+      return (<style is:global set:html={rules} />);
+    })()}
   </head>
   <body>
     <slot />
