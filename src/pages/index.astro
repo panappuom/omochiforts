@@ -3,6 +3,7 @@ import Layout from "../components/Layout.astro";
 import images from "../data/images.index.json";
 import sets from "../data/sets.json";
 import cfg from "../config/site.config.json";
+import GalleryItem from "../components/GalleryItem.astro";
  
 // slugごとにグループ化して cover を選ぶ（最初の1枚）
 const bySlug = new Map();
@@ -52,17 +53,10 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
       </div>
       <div class="panels">
         <section id="panel-images" class="panel images" aria-label="images">
-          <div class="img-grid">
+          {/* これまでと同じ“自然比率の縦伸び”で並ぶよう、GalleryItem は mode="natural" を既定にしています。 */}
+          <div class="img-grid" role="list">
             {imagesSorted.map((it) => (
-              <img
-                class="img"
-                src={it.s}
-                alt={`${it.slug}/${it.name}`}
-                loading="lazy"
-                decoding="async"
-                width={it.w}
-                height={it.h}
-              />
+              <GalleryItem item={it} />
             ))}
           </div>
         </section>

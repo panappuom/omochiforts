@@ -1,0 +1,41 @@
+---
+// props: { item, hrefBase?, mode? }
+// item: images.index.json の1要素相当 { slug, name, s, l, w, h, ... }
+// hrefBase: 画像詳細のベースURL。未指定なら仮で "/image/" を使う（後で差し替え）。
+// mode: 'natural' | 'cover' // 'natural' は従来レイアウト互換（画像の自然比率で高さが決まる）
+const { item, hrefBase = '/image/', mode = 'natural' } = Astro.props;
+const { slug, name, s, w, h } = item || {};
+
+
+// 仮の詳細ページURL。運用決め次第でここを差し替え。
+const href = `${hrefBase}${slug}/${name}/`;
+---
+<div class={`card ${mode}`} data-slug={slug} data-name={name}>
+<a class="link" href={href} aria-label={`${slug}/${name} を開く`}>
+{/* レイアウト互換のため img をそのまま表示（高さは自然比率で決定） */}
+<img
+class="img"
+src={s}
+alt={`${slug}/${name}`}
+loading="lazy"
+decoding="async"
+width={w}
+height={h}
+/>
+</a>
+</div>
+
+
+<style>
+.card { break-inside: avoid; display:block; }
+.link { display:block; text-decoration:none; color:inherit; }
+
+
+/* 互換表示: 画像は従来どおりの自然比率で高さ確保 */
+.card.natural .img { width:100%; height:auto; display:block; }
+
+
+/* 将来のクロップ版（必要になったら切替）
+.card.cover .img { width:100%; height:100%; object-fit:cover; display:block; }
+*/
+</style>
