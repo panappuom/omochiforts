@@ -1,9 +1,13 @@
 {
   "images": {
     "smallWidth": 236,
+    "small2x": 472,
     "largeWidth": 1200,
-    "qualitySmall": 82,
-    "qualityLarge": 88,
+    "large2x": 2400,
+    "qualitySmall": 72,
+    "qualityLarge": 82,
+    "formats": ["avif","webp"],
+    "placeholder": "blur",
     "rebuildIfNewer": true,
     "outputDir": "public/assets"
   },
