@@ -1,6 +1,6 @@
 ---
 // props: { item, hrefBase?, mode? }
-// item: images.index.json の1要素相当 { slug, name, s, l, w, h, ... }
+// item: images.json の1要素相当 { slug, name, s, l, w, h, ... }
 // hrefBase: 画像詳細のベースURL。未指定なら仮で "/image/" を使う（後で差し替え）。
 // mode: 'natural' | 'cover' // 'natural' は従来レイアウト互換（画像の自然比率で高さが決まる）
 const { item, hrefBase = '/image/', mode = 'natural' } = Astro.props;

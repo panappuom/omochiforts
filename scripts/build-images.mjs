@@ -1,7 +1,7 @@
 // scripts/build-images.mjs
 // 元画像: src/originals/<slug>/*.{jpg,jpeg,png,webp}
 // 出力:   src/assets/<slug>/<name>_<width>x.webp （small/large）
-// ついでに src/data/images.index.json を生成。
+// ついでに src/data/images.json を生成。
 // 参考: 現在の手元版に最小差分で統合（config連動/LQIP/パス整形/ID統一）
 
 import fg from 'fast-glob';
@@ -27,7 +27,7 @@ const {
 
 const SRC = 'src/originals';
 const OUT_BASE = cfg.images?.outputDir || 'public/assets';
-const INDEX = 'src/data/images.index.json';
+const INDEX = 'src/data/images.json';
 
 // config反映
 const S_WIDTH = smallWidth; // 例: 236
