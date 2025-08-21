@@ -47,18 +47,20 @@ body{ margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:
 .name{ font-weight:600; }
 .sub{ color: var(--muted); font-size: 0.9rem; }
 
-/* images grid */
+/* images grid: multicol masonry */
 .img-grid{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
-  gap: var(--gy) var(--gx);
+  column-width: var(--min-thumb);
+  column-gap: var(--gx);
+}
+.img-grid .card{
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: var(--gy);
+  display:block;
 }
 .img-grid .img{
   width:100%; height:auto; display:block;
   background:#222; object-fit: cover;
-}
-@media (min-width: 768px){
-  .img-grid{ grid-template-columns: repeat(auto-fit, minmax(236px, 1fr)); gap: var(--gy) var(--gx); }
 }
 
 /* tabs */

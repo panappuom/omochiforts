@@ -3,7 +3,6 @@ import Layout from "../components/Layout.astro";
 import images from "../data/images.index.json";
 import sets from "../data/sets.json";
 import cfg from "../config/site.config.json";
-import GalleryItem from "../components/GalleryItem.astro";
  
 // slugごとにグループ化して cover を選ぶ（最初の1枚）
 const bySlug = new Map();
@@ -53,17 +52,27 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
       </div>
       <div class="panels">
         <section id="panel-images" class="panel images" aria-label="images">
-          {/* これまでと同じ“自然比率の縦伸び”で並ぶよう、GalleryItem は mode="natural" を既定にしています。 */}
-          <div class="img-grid" role="list">
+          {/* Greedy用: data-w/h/tags を付与し、カード要素に統一 */}
+          <div id="grid-images" class="img-grid" role="list">
             {imagesSorted.map((it) => (
-              <GalleryItem item={it} />
+              <div class="card" data-w={it.w} data-h={it.h} data-tags={(it.tags ?? []).join(',')}>
+                <img
+                  class="img"
+                  src={it.s}
+                  alt={`${it.slug}/${it.name}`}
+                  loading="lazy"
+                  decoding="async"
+                  width={it.w}
+                  height={it.h}
+                />
+              </div>
             ))}
           </div>
         </section>
         <section id="panel-works" class="panel works" aria-label="works">
-          <div class="grid">
+          <div id="grid-works" class="grid">
             {cards.map((c) => (
-              <a class="card" href={`/work/${c.slug}/`} aria-label={`${c.title} を開く`}>
+              <a class="card" href={`/work/${c.slug}/`} aria-label={`${c.title} を開く`} data-w="1" data-h="1" data-tags={(sets[c.slug]?.tags ?? []).join(',')}>
                 <div class="thumb">
                   {c.coverSrc ? (
                     <img src={c.coverSrc} alt={c.title} loading="lazy" decoding="async" />
@@ -82,4 +91,85 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
       </div>
     </div>
   </main>
+  <script is:inline>
+    {`
+    (() => {
+      function setupGreedy(grid){
+        if(!grid) return null;
+        const styles = () => getComputedStyle(document.documentElement);
+        const getGaps = () => {
+          const r = styles();
+          return { gx: parseFloat(r.getPropertyValue('--gx'))||0, gy: parseFloat(r.getPropertyValue('--gy'))||0 };
+        };
+        const getCols = () => {
+          const cs = getComputedStyle(grid);
+          // Prefer multicol metrics
+          const cc = parseInt(cs.columnCount);
+          if(!Number.isNaN(cc) && cc > 0) return cc;
+          const cw = parseFloat(cs.columnWidth);
+          if(Number.isFinite(cw) && cw > 0){
+            const { gx } = getGaps();
+            return Math.max(1, Math.floor((grid.clientWidth + gx) / (cw + gx)));
+          }
+          // Fallback to grid-template-columns count if present
+          const tpl = (cs.gridTemplateColumns || '').trim();
+          if(!tpl) return 1;
+          return Math.max(1, tpl.split(' ').length || 1);
+        };
+        const metaH = () => parseFloat(styles().getPropertyValue('--meta-h')) || 0;
+
+        const ALL = Array.from(grid.children);
+        let current = ALL.slice();
+
+        const relayout = (items) => {
+          const { gx, gy } = getGaps();
+          const cols = getCols();
+          // Determine column width for estimation
+          const cs = getComputedStyle(grid);
+          let colW = parseFloat(cs.columnWidth);
+          if(!(Number.isFinite(colW) && colW > 0)){
+            const W = grid.clientWidth - gx * (cols - 1);
+            colW = W / Math.max(1, cols);
+          }
+
+          const colHeights = new Array(cols).fill(0);
+          const buckets = Array.from({ length: cols }, () => []);
+
+          for (const el of items){
+            const w = +el.dataset.w || 1;
+            const h = +el.dataset.h || 1;
+            const est = (h / w) * colW + metaH();
+            let k = 0, minV = colHeights[0];
+            for(let i=1;i<cols;i++){ if(colHeights[i] < minV){ k=i; minV=colHeights[i]; } }
+            buckets[k].push(el);
+            colHeights[k] = minV + est + gy;
+          }
+
+          const frag = document.createDocumentFragment();
+          for(let c=0;c<cols;c++) for(const el of buckets[c]) frag.appendChild(el);
+          grid.appendChild(frag);
+        };
+
+        const api = {
+          filter(tag){ if(!tag){ current=ALL.slice(); return api; } current = ALL.filter(el => (el.dataset.tags||'').split(',').includes(tag)); return api; },
+          random(){ const a=current.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } current=a; return api; },
+          sortByNewest(){ return api; },
+          apply(){ relayout(current); return api; },
+          reset(){ current = ALL.slice(); return api; }
+        };
+
+        const doLayout = () => api.apply();
+        window.addEventListener('load', doLayout);
+        new ResizeObserver(() => {
+          clearTimeout(grid.__greedy_t);
+          grid.__greedy_t = setTimeout(doLayout, 60);
+        }).observe(grid);
+        return api;
+      }
+
+      const apiImages = setupGreedy(document.querySelector('#grid-images') || document.querySelector('.img-grid'));
+      window.GREEDY = { images: apiImages };
+    })();
+    `}
+  </script>
 </Layout>
