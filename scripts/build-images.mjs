@@ -5,7 +5,7 @@
 //   npm i -D sharp fast-glob ulid
 //
 // 仕様ポイント:
-// - 入力: originalsDir（既定 originals、無ければ src/originals）配下の .jpg/.jpeg/.png/.webp/.avif
+// - 入力: originalsDir（既定 originals/originals_upscaled、無ければ originals → src/originals）配下の .jpg/.jpeg/.png/.webp/.avif
 // - 出力: src/assets/{s,s2x,l,l2x}/{id}.{avif,webp}   ← “正”の出力
 // - ミラー: public/assets に差分同期（URLは常に /assets/... を書く）
 // - images.json: src/data/images.json を唯一のメタ“真実”とする。既存レコードは人手項目(title/alt/tags等)を温存マージ
@@ -27,7 +27,7 @@ const cfg = require('../src/config/site.config.json');
 
 // ===== 設定 =====
 const IM = cfg.images ?? {};
-const ORIGINALS = resolveExisting(IM.originalsDir ?? 'originals', 'src/originals');
+const ORIGINALS = resolveExisting(IM.originalsDir ?? 'originals/originals_upscaled', 'originals', 'src/originals');
 const OUT_BASE  = IM.outputDir  ?? 'src/assets';
 const PUB_BASE  = IM.publicDir  ?? 'public/assets';
 const INDEX_JSON = 'src/data/images.json';
