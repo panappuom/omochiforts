@@ -1,15 +1,17 @@
 {
   "images": {
+    "originalsDir": "originals", 
+    "outputDir": "src/assets",     
+    "publicDir": "public/assets",    
     "smallWidth": 236,
     "small2x": 472,
     "largeWidth": 1200,
     "large2x": 2400,
     "qualitySmall": 72,
     "qualityLarge": 82,
-    "formats": ["avif","webp"],
-    "placeholder": "blur",
     "rebuildIfNewer": true,
-    "outputDir": "public/assets"
+    "formats": ["avif","webp"],
+    "lqip": { "enabled": true, "size": 24, "quality": 50 }
   },
   "layout": {
     "gap": { "sp": { "x": 4, "y": 4 }, "pc": { "x": 16, "y": 16 } },
