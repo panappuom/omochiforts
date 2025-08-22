@@ -26,3 +26,6 @@ pnpm-debug.log*
 # build-images の生成物
 public/**
 !public/favicon.png
+
+# originals（元画像系）はリポジトリに含めない
+originals/**
