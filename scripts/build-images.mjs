@@ -44,6 +44,22 @@ const LQIP_ENABLED = !!IM.lqip?.enabled;
 const LQIP_SIZE    = IM.lqip?.size ?? 24;
 const LQIP_QUALITY = IM.lqip?.quality ?? 50;
 
+// ===== Effective Config logging (Single Source of Truth: src/config/site.config.json) =====
+console.log("Effective Config (images):", JSON.stringify({
+  originalsDir: ORIGINALS,
+  outputDir: OUT_BASE,
+  publicDir: PUB_BASE,
+  smallWidth: W_S,
+  small2x: W_S2,
+  largeWidth: W_L,
+  large2x: W_L2,
+  qualitySmall: Q_S,
+  qualityLarge: Q_L,
+  rebuildIfNewer: REBUILD_IF_NEWER,
+  formats: FORMATS,
+  lqip: { enabled: LQIP_ENABLED, size: LQIP_SIZE, quality: LQIP_QUALITY }
+}, null, 2));
+
 // 出力ディレクトリ（サイズ別）
 const DIR_S  = path.join(OUT_BASE, 's');
 const DIR_S2 = path.join(OUT_BASE, 's2x');

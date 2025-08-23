@@ -5,24 +5,44 @@ import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
 import { imageSize } from "image-size";
+import { createRequire } from "node:module";
 
 const execFileAsync = promisify(execFile);
 
-// ルートと各パス
-const ROOT = "D:/project/omochiforts/originals";
-const SRC = path.join(ROOT, "originals_lowres");
-const DST = path.join(ROOT, "originals_upscaled");
-const LOG = path.join(ROOT, "upscale-report.tsv");  // ここに追記
+// ===== Single Source of Truth: src/config/site.config.json =====
+const require = createRequire(import.meta.url);
+const siteCfg = require("../src/config/site.config.json");
+const UPS = siteCfg.upscale ?? {};
+
+// ルートと各パス（site.config.json を優先。無ければ従来デフォルト）
+const ROOT = UPS.root ?? "D:/project/omochiforts/originals";
+const SRC = UPS.srcDir ?? path.join(ROOT, "originals_lowres");
+const DST = UPS.dstDir ?? path.join(ROOT, "originals_upscaled");
+const LOG = UPS.logFile ?? path.join(ROOT, "upscale-report.tsv");  // ここに追記
 
 // ツール
-const WAIFU2X   = path.join(ROOT, "tools/waifu2x/waifu2x-ncnn-vulkan.exe");
-const REALESRGAN = path.join(ROOT, "tools/realesrgan/realesrgan-ncnn-vulkan.exe");
+const WAIFU2X   = UPS.waifu2xPath   ?? path.join(ROOT, "tools/waifu2x/waifu2x-ncnn-vulkan.exe");
+const REALESRGAN = UPS.realesrganPath ?? path.join(ROOT, "tools/realesrgan/realesrgan-ncnn-vulkan.exe");
 
 // 拡張子と閾値
-const exts = new Set([".jpg", ".jpeg", ".png", ".webp"]);
-const TARGET_UPSCALED = 2000;
-const MIN_FOR_EASY = 700;
-const MIN_FOR_HARD = 250;
+const exts = new Set(UPS.extensions ?? [".jpg", ".jpeg", ".png", ".webp"]);
+const TARGET_UPSCALED = UPS.targetUpscaled ?? 2000;
+const MIN_FOR_EASY = UPS.minForEasy ?? 700;
+const MIN_FOR_HARD = UPS.minForHard ?? 250;
+
+// 実効設定ログ（Single Source of Truth の可視化）
+console.log("Effective Config (upscale):", JSON.stringify({
+  root: ROOT,
+  srcDir: SRC,
+  dstDir: DST,
+  logFile: LOG,
+  waifu2xPath: WAIFU2X,
+  realesrganPath: REALESRGAN,
+  extensions: Array.from(exts),
+  targetUpscaled: TARGET_UPSCALED,
+  minForEasy: MIN_FOR_EASY,
+  minForHard: MIN_FOR_HARD
+}, null, 2));
 
 // 統計
 const stats = { total:0, skipped:0, w2xOnce:0, w2xTwice:0, realesrganUsed:0, errors:0 };
