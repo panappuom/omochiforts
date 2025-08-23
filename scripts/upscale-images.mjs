@@ -149,7 +149,7 @@ async function upscaleSmart(full, outPath) {
   if (!m) throw new Error("size read failed");
 
   if (fs.existsSync(outPath)) {
-    console.log(`skip (exists): ${outPath}`);
+    // suppressed: skip (exists)
     stats.skipped++;
     await logLine({ src: full, out: outPath, method: "Skip", extra: "exists" });
     return;
