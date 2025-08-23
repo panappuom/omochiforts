@@ -168,6 +168,13 @@ async function upscaleSmart(full, outPath) {
   const m = maxSide({ width, height });
   if (!m) throw new Error("size read failed");
 
+  // 目標最長辺に既到達ならスキップ（SSOT: site.config.json の upscale.targetUpscaled）
+  if (m >= TARGET_UPSCALED) {
+    stats.skipped++;
+    await logLine({ src: full, out: outPath, method: "Skip", extra: `target>=${TARGET_UPSCALED}` });
+    return;
+  }
+
   if (fs.existsSync(outPath)) {
     // suppressed: skip (exists)
     stats.skipped++;

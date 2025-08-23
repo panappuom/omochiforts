@@ -30,6 +30,10 @@
     "lqip": true,
     "infinite": { "batch": 60, "preRenderBatches": 2 }
   },
+  "upscale": {
+    "minForEasy": 960,
+    "targetUpscaled": 2000
+  },
   "search": {
     "mode": "AND",
     "orDelimiter": "|",
