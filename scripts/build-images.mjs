@@ -244,7 +244,6 @@ for (const rel of inputs) {
   const record = {
     id,
     source: relPosix,
-    originalName: path.basename(rel),
     title: keep.title ?? '',        // 人手で編集OK
     alt: keep.alt ?? '',
     series: keep.series ?? [],
