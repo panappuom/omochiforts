@@ -486,10 +486,63 @@ async function walkAndProcess(dir) {
   }
 }
 
+// ログ回転用: ラン区切りマーカー
+const RUN_MARK = "# RUN";
+
 // ヘッダを書いておく（存在しなければ）
 if (!fs.existsSync(LOG)) {
   await fsp.writeFile(LOG, "timestamp\tsrc\tout\tmethod\tmodel\tscale\textra\n", "utf8");
 }
+
+// ログを N ラン分に回転
+async function rotateLog(maxRuns=5) {
+  try {
+    const raw = await fsp.readFile(LOG, "utf8");
+    const lines = raw.split(/\r?\n/);
+    if (!lines.length) return;
+
+    // 先頭行がヘッダの場合は保持
+    const header = lines[0].startsWith("timestamp\t") ? lines[0] : null;
+    const bodyStart = header ? 1 : 0;
+    const body = lines.slice(bodyStart).filter(l => l.length > 0);
+
+    // RUN マーカーの位置を収集
+    const idx = [];
+    for (let i=0;i<body.length;i++) {
+      if (body[i].startsWith(RUN_MARK)) idx.push(i);
+    }
+
+    if (idx.length === 0) {
+      // 旧ファイル（マーカー無し）は、そのまま残し、新ランからマーカー運用を開始
+      return;
+    }
+
+    // ランごとに分割
+    const runs = [];
+    for (let r=0; r<idx.length; r++) {
+      const s = idx[r];
+      const e = (r+1 < idx.length) ? idx[r+1] : body.length;
+      runs.push(body.slice(s, e));
+    }
+
+    if (runs.length <= maxRuns) return;
+
+    const kept = runs.slice(-maxRuns);
+    const outLines = [];
+    if (header) outLines.push(header);
+    for (const r of kept) outLines.push(...r);
+    outLines.push(""); // 終端改行
+    await fsp.writeFile(LOG, outLines.join("\n"), "utf8");
+  } catch {}
+}
+
+await rotateLog(5);
+
+// 新しいランの開始マーカーを書き込む
+try {
+  const runHeader = `${RUN_MARK}\t${new Date().toISOString()}`;
+  await fsp.appendFile(LOG, runHeader + "\n", "utf8");
+} catch {}
 
 await ensureDir(DST);
 await walkAndProcess(SRC);
