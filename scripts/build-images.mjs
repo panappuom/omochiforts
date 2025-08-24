@@ -238,6 +238,7 @@ for (const rel of inputs) {
   const keep = current ?? {};
   const record = {
     id,
+    originalName: path.basename(rel),
     title: keep.title ?? '',        // 人手で編集OK
     alt: keep.alt ?? '',
     series: keep.series ?? [],
@@ -250,7 +251,6 @@ for (const rel of inputs) {
     sizes: urls,
     caption: keep.caption ?? '',
     links: keep.links ?? { products: [], related: [] },
-    rights: keep.rights ?? { copyright: '© Omochi Fortress' },
   };
 
   outIndex.push(record);
