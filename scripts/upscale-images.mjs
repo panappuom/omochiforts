@@ -17,6 +17,7 @@ const UPS = siteCfg.upscale ?? {};
 const DEBUG = UPS.debug ?? {};
 const RGS = UPS.realesrgan ?? {};
 const DETECT_BLACK = !!DEBUG.detectBlack;
+const OVERRIDES = UPS.overrides ?? {};
 
 // ルートと各パス（site.config.json を優先。無ければ従来デフォルト）
 const ROOT = UPS.root ?? "D:/project/omochiforts/originals";
@@ -33,6 +34,8 @@ const RG_MODEL = RGS.modelName ?? "realesr-animevideov3-x2";
 const RG_TILE = Number.isFinite(RGS.tile) ? Number(RGS.tile) : 0; // 0=auto
 const RG_FORMAT = RGS.format ?? null; // e.g. 'png' | 'jpg' | null(デフォルト)
 const FLATTEN_BEFORE = !!RGS.flattenBefore;
+const RG_GPU = (typeof RGS.gpu !== "undefined") ? Number(RGS.gpu) : 0; // -1=CPU
+const RG_RETRIES = Array.isArray(RGS.retryOnBlack) ? RGS.retryOnBlack : [];
 const BLACK_THRESH = Number.isFinite(RGS.blackThreshold) ? Number(RGS.blackThreshold) : 0.01;
 
 // 拡張子と閾値
@@ -53,7 +56,7 @@ console.log("Effective Config (upscale):", JSON.stringify({
   targetUpscaled: TARGET_UPSCALED,
   minForEasy: MIN_FOR_EASY,
   minForHard: MIN_FOR_HARD,
-  realesrgan: { modelName: RG_MODEL, tile: RG_TILE, format: RG_FORMAT, flattenBefore: FLATTEN_BEFORE },
+  realesrgan: { modelName: RG_MODEL, tile: RG_TILE, format: RG_FORMAT, flattenBefore: FLATTEN_BEFORE, gpu: RG_GPU, retryOnBlack: RG_RETRIES },
   debug: { keepTemp: KEEP_TEMP, dir: DEBUG_DIR, detectBlack: !!DEBUG.detectBlack, blackThreshold: RGS.blackThreshold ?? 0.01 }
 }, null, 2));
 
@@ -72,6 +75,16 @@ async function isBlackImage(file, threshold = 0.01) { // threshold: 0..1 (平均
     return avg <= (threshold * 255);
   } catch {
     return false;
+  }
+}
+
+async function meanBrightness(file) {
+  try {
+    const st = await sharp(file).stats();
+    const meanRGB = [st.channels[0]?.mean ?? 255, st.channels[1]?.mean ?? 255, st.channels[2]?.mean ?? 255];
+    return (meanRGB[0] + meanRGB[1] + meanRGB[2]) / 3;
+  } catch {
+    return NaN;
   }
 }
 
@@ -168,8 +181,17 @@ async function runWaifu2x(input, output, { scale=2, noise=1, tile=512, model="mo
   }
 }
 
-async function runRealESRGAN(input, output, { scale=2, tile=RG_TILE, modelName=RG_MODEL, format=RG_FORMAT } = {}) {
-  console.log(`→ Real-ESRGAN: s=${scale} -n ${modelName} -t ${tile}${format?` -f ${format}`:""}${FLATTEN_BEFORE?" (flatten)":""}`);
+async function runRealESRGAN(input, output, { scale=2, tile=RG_TILE, modelName=RG_MODEL, format=RG_FORMAT, flattenBefore=undefined, gpu=RG_GPU } = {}) {
+  const doFlattenCfg = (typeof flattenBefore === "undefined") ? FLATTEN_BEFORE : !!flattenBefore;
+  // 入力がアルファを持つ場合はフラット化を抑止（透明を白に潰さない）
+  const inMeta = await sharp(input).metadata();
+  const hasAlphaIn = !!inMeta.hasAlpha;
+  const doFlatten = doFlattenCfg && !hasAlphaIn;
+  // 一部バイナリは CPU(-g -1) を未サポート。要求されたら即エラーにして上位でフォールバックさせる。
+  if (gpu === -1) {
+    throw new Error("RealESRGAN CPU mode (-g -1) is not supported in this build; skipping to fallback");
+  }
+  console.log(`→ Real-ESRGAN: s=${scale} -n ${modelName} -t ${tile}${format?` -f ${format}`:""}${doFlatten?" (flatten)":""}${(typeof gpu!=="undefined")?` -g ${gpu}`:""}`);
   const modelsDir = await findModelsDir(modelName);
   if (!modelsDir) {
     const avail = await listAvailableModels();
@@ -180,7 +202,7 @@ async function runRealESRGAN(input, output, { scale=2, tile=RG_TILE, modelName=R
   try {
     let realInput = input;
     let tmpFlat = null;
-    if (FLATTEN_BEFORE) {
+    if (doFlatten) {
       tmpFlat = input.replace(/(\.[^.]+)$/i, `_flat$1`);
       await sharp(input).flatten({ background: { r: 255, g: 255, b: 255 } }).toFile(tmpFlat);
       await dumpTemp(tmpFlat, "flatten");
@@ -196,11 +218,35 @@ async function runRealESRGAN(input, output, { scale=2, tile=RG_TILE, modelName=R
       "-n", modelName         // モデル名
     ];
     if (format) { args.push("-f", format); }
+    if (typeof gpu !== "undefined") { args.push("-g", String(gpu)); }
 
     await execFileAsync(REALESRGAN, args, { cwd: path.dirname(REALESRGAN) });
     await logLine({ src: input, out: output, method: "RealESRGAN", model: modelName, scale: `${scale}x` });
     stats.realesrganUsed++;
     if (tmpFlat) { try { await fsp.unlink(tmpFlat); } catch {} }
+
+    // RealESRGAN 出力でアルファが失われていた場合、入力のアルファをリサイズして再適用
+    if (hasAlphaIn) {
+      try {
+        const outMeta = await sharp(output).metadata();
+        const outHasAlpha = !!outMeta.hasAlpha;
+        if (!outHasAlpha && outMeta.width && outMeta.height) {
+          const alphaPng = await sharp(input)
+            .ensureAlpha()
+            .extractChannel('alpha')
+            .resize(outMeta.width, outMeta.height, { kernel: 'nearest' })
+            .png()
+            .toBuffer();
+
+          const tmpWithA = output.replace(/(\.[^.]+)$/i, `_with_alpha$1`);
+          await sharp(output)
+            .composite([{ input: alphaPng, blend: 'dest-in' }])
+            .toFile(tmpWithA);
+          try { await fsp.rename(tmpWithA, output); } catch {}
+          await dumpTemp(output, "reapply_alpha");
+        }
+      } catch {}
+    }
   } catch (err) {
     console.error("Real-ESRGAN ERROR:", err.stderr?.toString?.() || err.message);
     await logLine({ src: input, out: output, method: "Error", model: modelName, extra: (err.stderr?.toString?.() || err.message) });
@@ -251,14 +297,61 @@ async function upscaleSmart(full, outPath) {
     await dumpTemp(tmp2, "hard_tmp2");
     stats.w2xTwice++;
 
-    if (fs.existsSync(REALESRGAN)) {
-      await runRealESRGAN(tmp2, outPath, { scale: 2, modelName: RG_MODEL });
-      await dumpTemp(outPath, "hard_realesr_final");
-      // 黒検知→フォールバック（Waifu2x 2回目の結果を採用）
-      if (DETECT_BLACK && await isBlackImage(outPath, BLACK_THRESH)) {
-        await logLine({ src: tmp2, out: outPath, method: "Fallback", model: "Waifu2x", extra: "black_detected_after_realesr" });
-        await runWaifu2x(tmp2, outPath, { scale: 2, noise: 0, model: "models-cunet" });
-        await dumpTemp(outPath, "hard_fallback_w2x_final");
+    if (fs.existsSync(REALESRGAN) && (OVERRIDES[path.basename(full)]?.use ?? "realesrgan") !== "waifu2x") {
+      const ovr = OVERRIDES[path.basename(full)]?.realesrgan ?? {};
+      let realesrOk = false;
+      try {
+        await runRealESRGAN(tmp2, outPath, { scale: 2, modelName: ovr.modelName ?? RG_MODEL, tile: ovr.tile ?? RG_TILE, format: ovr.format ?? RG_FORMAT, flattenBefore: ovr.flattenBefore, gpu: (typeof ovr.gpu!=="undefined"?ovr.gpu:RG_GPU) });
+        realesrOk = true;
+        await dumpTemp(outPath, "hard_realesr_final");
+      } catch (e) {
+        // RealESRGAN エラー時のリトライ（パラメータ変更）
+        for (const step of RG_RETRIES) {
+          try {
+            await runRealESRGAN(tmp2, outPath, {
+              scale: 2,
+              modelName: step.modelName ?? ovr.modelName ?? RG_MODEL,
+              tile: step.tile ?? ovr.tile ?? RG_TILE,
+              format: step.format ?? ovr.format ?? RG_FORMAT,
+              flattenBefore: (typeof step.flattenBefore!=="undefined") ? step.flattenBefore : (typeof ovr.flattenBefore!=="undefined" ? ovr.flattenBefore : FLATTEN_BEFORE),
+              gpu: (typeof step.gpu!=="undefined") ? step.gpu : (typeof ovr.gpu!=="undefined" ? ovr.gpu : RG_GPU)
+            });
+            realesrOk = true;
+            await dumpTemp(outPath, "hard_realesr_retry_ok");
+            break;
+          } catch {}
+        }
+        if (!realesrOk) {
+          await logLine({ src: tmp2, out: outPath, method: "Fallback", model: "Waifu2x", extra: "realesr_error_then_fallback" });
+          await runWaifu2x(tmp2, outPath, { scale: 2, noise: 0, model: "models-cunet" });
+          await dumpTemp(outPath, "hard_fallback_w2x_on_error");
+        }
+      }
+      // 黒検知→リトライ→最終フォールバック
+      if (realesrOk && DETECT_BLACK && await isBlackImage(outPath, BLACK_THRESH)) {
+        const trail = [];
+        let fixed = false;
+        for (const step of RG_RETRIES) {
+          trail.push(step);
+          await runRealESRGAN(tmp2, outPath, {
+            scale: 2,
+            modelName: step.modelName ?? ovr.modelName ?? RG_MODEL,
+            tile: step.tile ?? ovr.tile ?? RG_TILE,
+            format: step.format ?? ovr.format ?? RG_FORMAT,
+            flattenBefore: (typeof step.flattenBefore!=="undefined") ? step.flattenBefore : (typeof ovr.flattenBefore!=="undefined" ? ovr.flattenBefore : FLATTEN_BEFORE),
+            gpu: (typeof step.gpu!=="undefined") ? step.gpu : (typeof ovr.gpu!=="undefined" ? ovr.gpu : RG_GPU)
+          });
+          await dumpTemp(outPath, "hard_realesr_retry");
+          if (!(await isBlackImage(outPath, BLACK_THRESH))) { fixed = true; break; }
+        }
+        const mb = await meanBrightness(outPath);
+        if (!fixed) {
+          await logLine({ src: tmp2, out: outPath, method: "Fallback", model: "Waifu2x", extra: JSON.stringify({ reason: "black_after_retries", brightness: mb, retries: trail }) });
+          await runWaifu2x(tmp2, outPath, { scale: 2, noise: 0, model: "models-cunet" });
+          await dumpTemp(outPath, "hard_fallback_w2x_final");
+        } else {
+          await logLine({ src: tmp2, out: outPath, method: "RealESRGAN", model: (ovr.modelName ?? RG_MODEL), extra: JSON.stringify({ fixedByRetry: true, brightness: mb }) });
+        }
       }
       try { await fsp.unlink(tmp1); await fsp.unlink(tmp2); } catch {}
     } else {
@@ -275,14 +368,61 @@ async function upscaleSmart(full, outPath) {
   await dumpTemp(tmp1, "mid_tmp1");
   stats.w2xOnce++;
 
-  if (fs.existsSync(REALESRGAN)) {
-    await runRealESRGAN(tmp1, outPath, { scale: 2, modelName: RG_MODEL });
-    await dumpTemp(outPath, "mid_realesr_final");
-    // 黒検知→フォールバック（Waifu2x 二段目）
-    if (DETECT_BLACK && await isBlackImage(outPath, BLACK_THRESH)) {
-      await logLine({ src: tmp1, out: outPath, method: "Fallback", model: "Waifu2x", extra: "black_detected_after_realesr" });
-      await runWaifu2x(tmp1, outPath, { scale: 2, noise: 0, model: "models-cunet" });
-      await dumpTemp(outPath, "mid_fallback_w2x_final");
+  if (fs.existsSync(REALESRGAN) && (OVERRIDES[path.basename(full)]?.use ?? "realesrgan") !== "waifu2x") {
+    const ovr = OVERRIDES[path.basename(full)]?.realesrgan ?? {};
+    let realesrOk = false;
+    try {
+      await runRealESRGAN(tmp1, outPath, { scale: 2, modelName: ovr.modelName ?? RG_MODEL, tile: ovr.tile ?? RG_TILE, format: ovr.format ?? RG_FORMAT, flattenBefore: ovr.flattenBefore, gpu: (typeof ovr.gpu!=="undefined"?ovr.gpu:RG_GPU) });
+      realesrOk = true;
+      await dumpTemp(outPath, "mid_realesr_final");
+    } catch (e) {
+      // RealESRGAN エラー時のリトライ（パラメータ変更）
+      for (const step of RG_RETRIES) {
+        try {
+          await runRealESRGAN(tmp1, outPath, {
+            scale: 2,
+            modelName: step.modelName ?? ovr.modelName ?? RG_MODEL,
+            tile: step.tile ?? ovr.tile ?? RG_TILE,
+            format: step.format ?? ovr.format ?? RG_FORMAT,
+            flattenBefore: (typeof step.flattenBefore!=="undefined") ? step.flattenBefore : (typeof ovr.flattenBefore!=="undefined" ? ovr.flattenBefore : FLATTEN_BEFORE),
+            gpu: (typeof step.gpu!=="undefined") ? step.gpu : (typeof ovr.gpu!=="undefined" ? ovr.gpu : RG_GPU)
+          });
+          realesrOk = true;
+          await dumpTemp(outPath, "mid_realesr_retry_ok");
+          break;
+        } catch {}
+      }
+      if (!realesrOk) {
+        await logLine({ src: tmp1, out: outPath, method: "Fallback", model: "Waifu2x", extra: "realesr_error_then_fallback" });
+        await runWaifu2x(tmp1, outPath, { scale: 2, noise: 0, model: "models-cunet" });
+        await dumpTemp(outPath, "mid_fallback_w2x_on_error");
+      }
+    }
+    // 黒検知→リトライ→最終フォールバック
+    if (realesrOk && DETECT_BLACK && await isBlackImage(outPath, BLACK_THRESH)) {
+      const trail = [];
+      let fixed = false;
+      for (const step of RG_RETRIES) {
+        trail.push(step);
+        await runRealESRGAN(tmp1, outPath, {
+          scale: 2,
+          modelName: step.modelName ?? ovr.modelName ?? RG_MODEL,
+          tile: step.tile ?? ovr.tile ?? RG_TILE,
+          format: step.format ?? ovr.format ?? RG_FORMAT,
+          flattenBefore: (typeof step.flattenBefore!=="undefined") ? step.flattenBefore : (typeof ovr.flattenBefore!=="undefined" ? ovr.flattenBefore : FLATTEN_BEFORE),
+          gpu: (typeof step.gpu!=="undefined") ? step.gpu : (typeof ovr.gpu!=="undefined" ? ovr.gpu : RG_GPU)
+        });
+        await dumpTemp(outPath, "mid_realesr_retry");
+        if (!(await isBlackImage(outPath, BLACK_THRESH))) { fixed = true; break; }
+      }
+      const mb = await meanBrightness(outPath);
+      if (!fixed) {
+        await logLine({ src: tmp1, out: outPath, method: "Fallback", model: "Waifu2x", extra: JSON.stringify({ reason: "black_after_retries", brightness: mb, retries: trail }) });
+        await runWaifu2x(tmp1, outPath, { scale: 2, noise: 0, model: "models-cunet" });
+        await dumpTemp(outPath, "mid_fallback_w2x_final");
+      } else {
+        await logLine({ src: tmp1, out: outPath, method: "RealESRGAN", model: (ovr.modelName ?? RG_MODEL), extra: JSON.stringify({ fixedByRetry: true, brightness: mb }) });
+      }
     }
     try { await fsp.unlink(tmp1); } catch {}
   } else {
@@ -303,15 +443,44 @@ async function walkAndProcess(dir) {
       const ext = path.extname(ent.name).toLowerCase();
       if (!exts.has(ext)) continue;
 
-      const outName = flatName(SRC, full);
+      // decide output extension (gif/bmp -> png)
+      const targetExt = (ext === ".gif" || ext === ".bmp") ? ".png" : ext;
+      const outNameRaw = flatName(SRC, full);
+      const outName = outNameRaw.replace(/\.[^.]+$/, targetExt);
       const outPath = path.join(DST, outName);
 
+      // preprocess for gif/bmp
+      let srcForProcess = full;
+      let tmpSrcForProcess = null;
       try {
-        await upscaleSmart(full, outPath);
+        if (ext === ".gif") {
+          // check animation
+          const meta = await sharp(full).metadata();
+          const pages = Number(meta.pages || 1);
+          if (pages > 1) {
+            console.warn(`skip animated gif: ${full} (pages=${pages})`);
+            stats.skipped++;
+            await logLine({ src: full, out: outPath, method: "Skip", extra: `animated_gif pages=${pages}` });
+            continue;
+          }
+          // convert static gif -> png temp
+          tmpSrcForProcess = outPath.replace(/(\.[^.]+)$/i, `_src.png`);
+          await sharp(full).png().toFile(tmpSrcForProcess);
+          srcForProcess = tmpSrcForProcess;
+        } else if (ext === ".bmp") {
+          // normalize bmp -> png temp for stability
+          tmpSrcForProcess = outPath.replace(/(\.[^.]+)$/i, `_src.png`);
+          await sharp(full).png().toFile(tmpSrcForProcess);
+          srcForProcess = tmpSrcForProcess;
+        }
+
+        await upscaleSmart(srcForProcess, outPath);
       } catch (e) {
         console.error("❌ Error:", full, e.message);
         stats.errors++;
         await logLine({ src: full, out: outPath, method: "Error", extra: e.message });
+      } finally {
+        if (tmpSrcForProcess) { try { await fsp.unlink(tmpSrcForProcess); } catch {} }
       }
     }
   }
