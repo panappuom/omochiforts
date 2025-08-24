@@ -37,8 +37,16 @@
     "targetUpscaled": 2000,
     "minForEasy": 960,
     "minForHard": 250,
+    "realesrgan": {
+      "modelName": "realesr-animevideov3-x2",
+      "tile": 256,
+      "format": "png",
+      "flattenBefore": true,
+      "blackThreshold": 0.01
+    },
     "debug": {
       "keepTemp": true,
+      "detectBlack": true,
       "dir": "D:/project/omochiforts/originals/debug_upscale"
     }
   },
