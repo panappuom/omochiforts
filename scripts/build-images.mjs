@@ -21,13 +21,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 import { ulid as makeUlid } from 'ulid';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const cfg = require('../src/config/site.config.json');
 
 // ===== 設定 =====
 const IM = cfg.images ?? {};
-const ORIGINALS = resolveExisting(IM.originalsDir ?? 'originals/originals_upscaled', 'originals', 'src/originals');
 const OUT_BASE  = IM.outputDir  ?? 'src/assets';
 const PUB_BASE  = IM.publicDir  ?? 'public/assets';
 const INDEX_JSON = 'src/data/images.json';
@@ -43,6 +44,28 @@ const FORMATS = (IM.formats ?? ['avif','webp']).map(s => s.toLowerCase());
 const LQIP_ENABLED = !!IM.lqip?.enabled;
 const LQIP_SIZE    = IM.lqip?.size ?? 24;
 const LQIP_QUALITY = IM.lqip?.quality ?? 50;
+
+// ===== upscaler を先行実行（SSOTの設定でスキップや閾値も反映） =====
+function runUpscaler() {
+  const node = process.execPath; // 現在の Node 実行ファイル
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const script = path.join(__dirname, 'upscale-images.mjs');
+  console.log(`\n→ Running upscaler: ${node} ${script}`);
+  const res = spawnSync(node, [script], { stdio: 'inherit', env: process.env });
+  if (res.error) {
+    console.error('Upscaler spawn error:', res.error);
+    process.exit(1);
+  }
+  if (typeof res.status === 'number' && res.status !== 0) {
+    console.error(`Upscaler exited with status ${res.status}`);
+    process.exit(res.status);
+  }
+  console.log('← Upscaler finished');
+}
+runUpscaler();
+
+// アップスケール後に ORIGINALS を解決（upscaled 出力が新規作成された場合にも対応）
+const ORIGINALS = resolveExisting(IM.originalsDir ?? 'originals/originals_upscaled');
 
 // ===== Effective Config logging (Single Source of Truth: src/config/site.config.json) =====
 console.log("Effective Config (images):", JSON.stringify({
