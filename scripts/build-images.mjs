@@ -32,6 +32,7 @@ const IM = cfg.images ?? {};
 const OUT_BASE  = IM.outputDir  ?? 'src/assets';
 const PUB_BASE  = IM.publicDir  ?? 'public/assets';
 const INDEX_JSON = 'src/data/images.json';
+const CLEAN_OUTPUTS = !!(IM.cleanOutputs ?? false);
 
 const W_S   = IM.smallWidth   ?? 236;
 const W_S2  = IM.small2x      ?? W_S * 2;
@@ -80,7 +81,8 @@ console.log("Effective Config (images):", JSON.stringify({
   qualityLarge: Q_L,
   rebuildIfNewer: REBUILD_IF_NEWER,
   formats: FORMATS,
-  lqip: { enabled: LQIP_ENABLED, size: LQIP_SIZE, quality: LQIP_QUALITY }
+  lqip: { enabled: LQIP_ENABLED, size: LQIP_SIZE, quality: LQIP_QUALITY },
+  cleanOutputs: CLEAN_OUTPUTS
 }, null, 2));
 
 // 出力ディレクトリ（サイズ別）
@@ -153,6 +155,7 @@ async function mirrorDir(srcDir, dstDir) {
 let prev = [];
 try { prev = JSON.parse(fs.readFileSync(INDEX_JSON, 'utf-8')); } catch {}
 const prevById = new Map(prev.map(r => [r.id, r]));
+const prevBySource = new Map(prev.filter(r => r.source).map(r => [r.source, r]));
 
 // ===== 入力走査 =====
 const inputs = await fg(['**/*.{jpg,jpeg,png,webp,avif}'], { cwd: ORIGINALS, dot:false, onlyFiles:true });
@@ -171,10 +174,12 @@ let made = 0, skipped = 0;
 // ===== 変換ループ =====
 for (const rel of inputs) {
   const inAbs = path.resolve(ORIGINALS, rel);
+  const relPosix = posix(rel);
   const stem = fileStem(rel);
 
   // 既存レコードを探索（id一致 or ファイル名一致（移行期））
-  let current = prevById.get(stem) || prev.find(r =>
+  // 既存レコード検索: source 優先 → 旧互換のヒューリスティック
+  let current = prevBySource.get(relPosix) || prevById.get(stem) || prev.find(r =>
     r.id === stem || r.sizes?.s?.webp?.includes(`/${stem}.webp`)
   );
 
@@ -238,6 +243,7 @@ for (const rel of inputs) {
   const keep = current ?? {};
   const record = {
     id,
+    source: relPosix,
     originalName: path.basename(rel),
     title: keep.title ?? '',        // 人手で編集OK
     alt: keep.alt ?? '',
@@ -267,6 +273,30 @@ outIndex.sort((a,b)=>{
 // JSON出力
 ensureDir(path.dirname(INDEX_JSON));
 fs.writeFileSync(INDEX_JSON, JSON.stringify(outIndex, null, 2), 'utf-8');
+
+// （オプション）不要出力のクリーンアップ（index に存在しない id を削除）
+if (CLEAN_OUTPUTS) {
+  const keepIds = new Set(outIndex.map(r => String(r.id)));
+  const sizeDirs = [
+    { dir: DIR_S,  label: 's'   },
+    { dir: DIR_S2, label: 's2x' },
+    { dir: DIR_L,  label: 'l'   },
+    { dir: DIR_L2, label: 'l2x' }
+  ];
+  for (const {dir} of sizeDirs) {
+    try {
+      const files = fs.readdirSync(dir);
+      for (const f of files) {
+        const base = path.basename(f, path.extname(f));
+        if (!keepIds.has(base)) {
+          try { fs.rmSync(path.join(dir, f), { force: true }); } catch {}
+        }
+      }
+    } catch {}
+  }
+  // クリーン後に public を再ミラー
+  await mirrorDir(OUT_BASE, PUB_BASE);
+}
 
 // まとめ
 console.log(`\n✓ images.json written (${outIndex.length} items)`);

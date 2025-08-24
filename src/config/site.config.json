@@ -11,7 +11,8 @@
     "qualityLarge": 82,
     "rebuildIfNewer": true,
     "formats": ["avif","webp"],
-    "lqip": { "enabled": true, "size": 24, "quality": 50 }
+    "lqip": { "enabled": true, "size": 24, "quality": 50 },
+    "cleanOutputs": true
   },
   "layout": {
     "gap": { "sp": { "x": 4, "y": 4 }, "pc": { "x": 16, "y": 16 } },
@@ -51,7 +52,7 @@
       ]
     },
     "debug": {
-      "keepTemp": true,
+      "keepTemp": false,
       "detectBlack": true,
       "dir": "D:/project/omochiforts/originals/debug_upscale"
     },
