@@ -27,5 +27,9 @@ pnpm-debug.log*
 public/**
 !public/favicon.png
 
-# originals（元画像系）はリポジトリに含めない
-originals/**
+# - 正本出力: src/assets/
+# - インデックス: src/data/images.json
+/src/assets/**
+
+# originals（元画像系）はリポジトリに含めない（ルート限定）
+/originals/**
