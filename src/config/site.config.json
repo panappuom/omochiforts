@@ -31,8 +31,16 @@
     "infinite": { "batch": 60, "preRenderBatches": 2 }
   },
   "upscale": {
+    "root": "D:/project/omochiforts/originals",
+    "srcDir": "D:/project/omochiforts/originals/originals_lowres",
+    "dstDir": "D:/project/omochiforts/originals/originals_upscaled",
+    "targetUpscaled": 2000,
     "minForEasy": 960,
-    "targetUpscaled": 2000
+    "minForHard": 250,
+    "debug": {
+      "keepTemp": true,
+      "dir": "D:/project/omochiforts/originals/debug_upscale"
+    }
   },
   "search": {
     "mode": "AND",

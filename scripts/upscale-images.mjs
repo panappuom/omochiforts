@@ -13,12 +13,15 @@ const execFileAsync = promisify(execFile);
 const require = createRequire(import.meta.url);
 const siteCfg = require("../src/config/site.config.json");
 const UPS = siteCfg.upscale ?? {};
+const DEBUG = UPS.debug ?? {};
 
 // ルートと各パス（site.config.json を優先。無ければ従来デフォルト）
 const ROOT = UPS.root ?? "D:/project/omochiforts/originals";
 const SRC = UPS.srcDir ?? path.join(ROOT, "originals_lowres");
 const DST = UPS.dstDir ?? path.join(ROOT, "originals_upscaled");
 const LOG = UPS.logFile ?? path.join(ROOT, "upscale-report.tsv");  // ここに追記
+const DEBUG_DIR = DEBUG.dir ?? path.join(ROOT, "debug_upscale");
+const KEEP_TEMP = !!DEBUG.keepTemp; // true で一時画像を保存
 
 // ツール
 const WAIFU2X   = UPS.waifu2xPath   ?? path.join(ROOT, "tools/waifu2x/waifu2x-ncnn-vulkan.exe");
@@ -41,7 +44,8 @@ console.log("Effective Config (upscale):", JSON.stringify({
   extensions: Array.from(exts),
   targetUpscaled: TARGET_UPSCALED,
   minForEasy: MIN_FOR_EASY,
-  minForHard: MIN_FOR_HARD
+  minForHard: MIN_FOR_HARD,
+  debug: { keepTemp: KEEP_TEMP, dir: DEBUG_DIR }
 }, null, 2));
 
 // 統計
@@ -51,6 +55,18 @@ async function ensureDir(dir){ await fsp.mkdir(dir,{recursive:true}); }
 function flatName(base, full){ return path.relative(base, full).split(path.sep).join("_"); }
 async function readSize(file){ const {width,height}=imageSize(await fsp.readFile(file)); return {width, height}; }
 function maxSide({width,height}){ return Math.max(width??0, height??0); }
+
+async function dumpTemp(filePath, tag="") {
+  if (!KEEP_TEMP) return;
+  try {
+    await ensureDir(DEBUG_DIR);
+    const base = flatName(SRC, filePath);
+    const ext = path.extname(filePath);
+    const name = tag ? `${base}_${tag}${ext}` : `${base}${ext}`;
+    const dst = path.join(DEBUG_DIR, name);
+    await fsp.copyFile(filePath, dst);
+  } catch {}
+}
 
 async function logLine({src, out, method, model="", scale="", extra=""}) {
   const line = [
@@ -126,6 +142,7 @@ async function runWaifu2x(input, output, { scale=2, noise=1, tile=512, model="mo
       { cwd: path.dirname(WAIFU2X) }
     );
     await logLine({ src: input, out: output, method: "Waifu2x", model, scale: `${scale}x` });
+    await dumpTemp(output, `w2x_${scale}x_${model}`);
   } catch (err) {
     console.error("Waifu2x ERROR:", err.stderr?.toString?.() || err.message);
     throw err;
@@ -190,6 +207,7 @@ async function upscaleSmart(full, outPath) {
     console.log(`process: ${full}  [max=${m}]  plan: Waifu2x x2`);
     await runWaifu2x(full, outPath, { scale: 2, noise: 1, model: "models-cunet" });
     stats.w2xOnce++;
+    await dumpTemp(outPath, "easy_final");
     return;
   }
 
@@ -200,14 +218,18 @@ async function upscaleSmart(full, outPath) {
   if (m <= MIN_FOR_HARD) {
     console.log(`process: ${full}  [max=${m}]  plan: Waifu2x x2 -> x2 (+ RealESRGAN if available)`);
     await runWaifu2x(full, tmp1, { scale: 2, noise: 1, model: "models-cunet" });
+    await dumpTemp(tmp1, "hard_tmp1");
     await runWaifu2x(tmp1, tmp2, { scale: 2, noise: 0, model: "models-cunet" });
+    await dumpTemp(tmp2, "hard_tmp2");
     stats.w2xTwice++;
 
     if (fs.existsSync(REALESRGAN)) {
       await runRealESRGAN(tmp2, outPath, { scale: 2, modelName: "realesr-animevideov3-x2" });
+      await dumpTemp(outPath, "hard_realesr_final");
       try { await fsp.unlink(tmp1); await fsp.unlink(tmp2); } catch {}
     } else {
       await fsp.rename(tmp2, outPath);
+      await dumpTemp(outPath, "hard_w2x_final");
       try { await fsp.unlink(tmp1); } catch {}
     }
     return;
@@ -216,14 +238,17 @@ async function upscaleSmart(full, outPath) {
   // B) 250〜700px：2x後にさらに持ち上げ（RealESRGAN優先）
   console.log(`process: ${full}  [max=${m}]  plan: Waifu2x x2 -> (RealESRGAN x2 | Waifu2x x2)`);
   await runWaifu2x(full, tmp1, { scale: 2, noise: 1, model: "models-cunet" });
+  await dumpTemp(tmp1, "mid_tmp1");
   stats.w2xOnce++;
 
   if (fs.existsSync(REALESRGAN)) {
     await runRealESRGAN(tmp1, outPath, { scale: 2, modelName: "realesr-animevideov3-x2" });
+    await dumpTemp(outPath, "mid_realesr_final");
     try { await fsp.unlink(tmp1); } catch {}
   } else {
     await runWaifu2x(tmp1, outPath, { scale: 2, noise: 0, model: "models-cunet" });
     stats.w2xTwice++;
+    await dumpTemp(outPath, "mid_w2x_final");
     try { await fsp.unlink(tmp1); } catch {}
   }
 }
