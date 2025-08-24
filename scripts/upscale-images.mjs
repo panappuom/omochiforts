@@ -183,9 +183,14 @@ async function runWaifu2x(input, output, { scale=2, noise=1, tile=512, model="mo
 
 async function runRealESRGAN(input, output, { scale=2, tile=RG_TILE, modelName=RG_MODEL, format=RG_FORMAT, flattenBefore=undefined, gpu=RG_GPU } = {}) {
   const doFlattenCfg = (typeof flattenBefore === "undefined") ? FLATTEN_BEFORE : !!flattenBefore;
-  // 入力がアルファを持つ場合はフラット化を抑止（透明を白に潰さない）
-  const inMeta = await sharp(input).metadata();
-  const hasAlphaIn = !!inMeta.hasAlpha;
+  // 入力メタデータ取得（Sharpが読めない形式は許容し、アルファ無し扱いで続行）
+  let hasAlphaIn = false;
+  try {
+    const inMeta = await sharp(input).metadata();
+    hasAlphaIn = !!inMeta.hasAlpha;
+  } catch {
+    hasAlphaIn = false; // 取得できない形式（例: 特殊BMP）はアルファ無し扱い
+  }
   const doFlatten = doFlattenCfg && !hasAlphaIn;
   // 一部バイナリは CPU(-g -1) を未サポート。要求されたら即エラーにして上位でフォールバックさせる。
   if (gpu === -1) {
@@ -468,10 +473,16 @@ async function walkAndProcess(dir) {
           await sharp(full).png().toFile(tmpSrcForProcess);
           srcForProcess = tmpSrcForProcess;
         } else if (ext === ".bmp") {
-          // normalize bmp -> png temp for stability
-          tmpSrcForProcess = outPath.replace(/(\.[^.]+)$/i, `_src.png`);
-          await sharp(full).png().toFile(tmpSrcForProcess);
-          srcForProcess = tmpSrcForProcess;
+          // normalize bmp -> png temp for stability (fallback: if sharp can't read this BMP, use original BMP)
+          try {
+            tmpSrcForProcess = outPath.replace(/(\.[^.]+)$/i, `_src.png`);
+            await sharp(full).png().toFile(tmpSrcForProcess);
+            srcForProcess = tmpSrcForProcess;
+          } catch (err) {
+            console.warn(`BMP convert failed, fallback to original BMP: ${full} -> ${err?.message || err}`);
+            tmpSrcForProcess = null; // do not delete original
+            srcForProcess = full;    // let external tools read BMP directly
+          }
         }
 
         await upscaleSmart(srcForProcess, outPath);
