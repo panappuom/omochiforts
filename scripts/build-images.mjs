@@ -189,6 +189,15 @@ for (const rel of inputs) {
 
   // createdAt: 既存 or mtime
   const createdAt = current?.createdAt ?? new Date(stat.mtimeMs).toISOString();
+  // sortKey: 既存の createdAt と比較して維持/更新（新規は createdAt を epoch(ms) に）
+  const prevCreatedAt = current?.createdAt;
+  const prevSortKey = (typeof current?.sortKey === 'number') ? current.sortKey : undefined;
+  const createdEpoch = Date.parse(createdAt || 0);
+  const sortKey = (current
+    ? (prevCreatedAt === createdAt && typeof prevSortKey === 'number')
+        ? prevSortKey
+        : createdEpoch
+    : createdEpoch);
 
   // id: 既存→継承 / 無ければ (ファイル名がULIDなら採用) or (createdAtでULID生成)
   const id = current?.id ?? (isUlidLike(stem) ? stem : makeUlid(Date.parse(createdAt)));
@@ -250,6 +259,7 @@ for (const rel of inputs) {
     characters: keep.characters ?? [],
     tags: keep.tags ?? [],
     createdAt,                      // 既存優先
+    sortKey,                        // 並び制御用（ms epoch）
     w: meta.width,
     h: meta.height,
     lqip,
@@ -263,9 +273,9 @@ for (const rel of inputs) {
 
 // 並び順: createdAt → id（ULID）で安定
 outIndex.sort((a,b)=>{
-  const ta = Date.parse(a.createdAt || 0);
-  const tb = Date.parse(b.createdAt || 0);
-  if (ta !== tb) return ta - tb;
+  const sa = (typeof a.sortKey === 'number') ? a.sortKey : Date.parse(a.createdAt || 0);
+  const sb = (typeof b.sortKey === 'number') ? b.sortKey : Date.parse(b.createdAt || 0);
+  if (sa !== sb) return sa - sb;
   return String(a.id).localeCompare(String(b.id));
 });
 
