@@ -178,7 +178,10 @@ for (const rel of inputs) {
     for (const fmt of FORMATS) {
       const dst = dstMap[fmt];
       if (await needBuild(inAbs, dst)) {
-        const pipe = sharp(inAbs).rotate().resize({ width, withoutEnlargement:true });
+        const pipe = sharp(inAbs)
+          .rotate()
+          // 長辺を width に収める（縦横どちらでも最大寸法が width 以下になる）
+          .resize({ width, height: width, fit: 'inside', withoutEnlargement: true });
         if (fmt === 'avif') await pipe.avif({ quality }).toFile(dst);
         else if (fmt === 'webp') await pipe.webp({ quality }).toFile(dst);
         else throw new Error(`Unsupported format: ${fmt}`);
