@@ -1,7 +1,7 @@
 {
   "images": {
     "originalsDir": "originals/originals_upscaled", 
-    "outputDir": "src/assets",     
+    "outputDir": "public/assets",     
     "publicDir": "public/assets",    
     "smallWidth": 236,
     "small2x": 472,

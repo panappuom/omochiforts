@@ -129,6 +129,8 @@ function walkFiles(dir) {
   });
 }
 async function mirrorDir(srcDir, dstDir) {
+  // 単一ディレクトリ運用（同一パス）の場合は何もしない
+  if (path.resolve(srcDir) === path.resolve(dstDir)) return;
   ensureDir(dstDir);
   // copy/update
   for (const s of walkFiles(srcDir)) {
