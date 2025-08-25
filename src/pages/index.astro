@@ -183,7 +183,15 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
           filter(tag){ if(!tag){ current=ALL.slice(); return api; } current = ALL.filter(el => (el.dataset.tags||'').split(',').includes(tag)); return api; },
           random(){ const a=current.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } current=a; return api; },
           sortByNewest(){ return api; },
-          apply(){ relayout(current); return api; },
+          apply(){
+            // 追加要素も含めて全面再レイアウト
+            const items = Array.from(grid.children).filter(el => el.classList?.contains('card'));
+            relayout(items);
+            // レイアウト後にセンチネルを末尾へ移動
+            const sentinel = document.getElementById('sentinel');
+            if (sentinel && sentinel.parentElement === grid) grid.appendChild(sentinel);
+            return api;
+          },
           reset(){ current = ALL.slice(); return api; }
         };
 
@@ -229,7 +237,13 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
           card.appendChild(img);
           frag.appendChild(card);
         }
-        grid.appendChild(frag);
+        const sentinel = document.getElementById('sentinel');
+        if (sentinel && sentinel.parentElement === grid) {
+          // センチネルの直前に挿入して、常に末尾にセンチネルが来るようにする
+          grid.insertBefore(frag, sentinel);
+        } else {
+          grid.appendChild(frag);
+        }
         // 追記後レイアウト更新
         try{ window.GREEDY?.images?.apply(); }catch{}
       }
