@@ -309,6 +309,28 @@ if (CLEAN_OUTPUTS) {
   await mirrorDir(OUT_BASE, PUB_BASE);
 }
 
+// 追加: クライアント用の軽量インデックスを public/images-index.json に出力（新着順）
+try {
+  const PUB_ROOT = path.dirname(PUB_BASE);
+  ensureDir(PUB_ROOT);
+  const slim = outIndex
+    .slice()
+    .sort((a,b)=>{
+      const sa = (typeof a.sortKey === 'number') ? a.sortKey : Date.parse(a.createdAt || 0);
+      const sb = (typeof b.sortKey === 'number') ? b.sortKey : Date.parse(b.createdAt || 0);
+      if (sa !== sb) return sb - sa; // desc
+      return String(a.id).localeCompare(String(b.id));
+    })
+    .map(r => ({
+      src: r?.sizes?.s?.avif ?? r?.sizes?.s?.webp ?? r?.sizes?.l?.avif ?? r?.sizes?.l?.webp ?? '',
+      w: r.w, h: r.h,
+      tags: Array.isArray(r.tags) ? r.tags : []
+    }));
+  fs.writeFileSync(path.join(PUB_ROOT, 'images-index.json'), JSON.stringify(slim), 'utf-8');
+} catch (e) {
+  console.warn('Warn: failed to write public/images-index.json', e);
+}
+
 // まとめ
 console.log(`\n✓ images.json written (${outIndex.length} items)`);
 console.log(`✓ outputs: ${OUT_BASE}  → mirrored →  ${PUB_BASE}`);

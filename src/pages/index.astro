@@ -3,37 +3,60 @@ import Layout from "../components/Layout.astro";
 import images from "../data/images.json";
 import sets from "../data/sets.json";
 import cfg from "../config/site.config.json";
- 
-// slugごとにグループ化して cover を選ぶ（最初の1枚）
-const bySlug = new Map();
-for (const img of images) {
-  if (!bySlug.has(img.slug)) bySlug.set(img.slug, []);
-  bySlug.get(img.slug).push(img);
+
+// ヘルパ: 小サイズ画像URL優先（avif→webp）
+const imgSmall = (r:any) => r?.sizes?.s?.avif ?? r?.sizes?.s?.webp ?? r?.sizes?.l?.avif ?? r?.sizes?.l?.webp ?? "";
+
+// ヘルパ: 擬似スラッグ（source の先頭トークンをグループキーに）
+const slugOf = (r:any) => {
+  const src = String(r?.source ?? "");
+  if (!src) return "misc";
+  const base = src.split('/').pop() || src;
+  // 例: "A_B_C.png" → "A"
+  return base.split('_')[0] || "misc";
+};
+
+// グループ化して cover を選ぶ（最初の1枚）。存在しないフィールドは使用しない
+const bySlug = new Map<string, any[]>();
+for (const img of images as any[]) {
+  const slug = slugOf(img);
+  if (!bySlug.has(slug)) bySlug.set(slug, []);
+  bySlug.get(slug)!.push(img);
 }
 const cards = [...bySlug.entries()].map(([slug, arr]) => {
-  // ファイル番号順っぽく name でソート（簡易）
-  arr.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  // 並びは sortKey(desc) → id
+  arr.sort((a:any, b:any) => {
+    const sa = typeof a.sortKey === 'number' ? a.sortKey : Date.parse(a.createdAt || 0);
+    const sb = typeof b.sortKey === 'number' ? b.sortKey : Date.parse(b.createdAt || 0);
+    if (sa !== sb) return sb - sa;
+    return String(a.id).localeCompare(String(b.id));
+  });
   const cover = arr[0];
-  const meta = sets[slug] || { title: slug, link: "", tags: [] };
+  const meta: any = (sets as any)[slug] || { title: slug, link: "", tags: [] };
   return {
     slug,
     title: meta.title ?? slug,
     link: meta.link ?? "",
     count: arr.length,
-    coverSrc: cover?.s ?? "",  // 無ければ空
+    coverSrc: imgSmall(cover),
   };
 });
-// 画像一覧用ソート: slug 先頭の数値で「降順」→ 同一slug内は name の数値「昇順」
-const imagesSorted = [...images].sort((a, b) => {
-  const anum = parseInt((a.slug.split('_')[0] ?? ''), 10);
-  const bnum = parseInt((b.slug.split('_')[0] ?? ''), 10);
-  if (!Number.isNaN(anum) && !Number.isNaN(bnum) && anum !== bnum) return bnum - anum; // 降順
-  if (a.slug !== b.slug) return b.slug.localeCompare(a.slug, 'ja');
-  const an = parseInt(a.name, 10);
-  const bn = parseInt(b.name, 10);
-  if (!Number.isNaN(an) && !Number.isNaN(bn) && an !== bn) return an - bn; // 昇順
-  return a.name.localeCompare(b.name, 'ja');
+
+// 画像一覧: 新着順（sortKey 降順）→ id
+const imagesSorted = [...(images as any[])].sort((a:any, b:any) => {
+  const sa = typeof a.sortKey === 'number' ? a.sortKey : Date.parse(a.createdAt || 0);
+  const sb = typeof b.sortKey === 'number' ? b.sortKey : Date.parse(b.createdAt || 0);
+  if (sa !== sb) return sb - sa;
+  return String(a.id).localeCompare(String(b.id));
 });
+
+// 初期表示件数（無限スクロールのサーバーサイド初期バッチ）
+const inf = (cfg as any)?.gallery?.infinite as any || {};
+const BATCH = Math.max(1, parseInt(inf?.batch) || 60);
+const PRE = Math.max(1, parseInt(inf?.preRenderBatches) || 1);
+const INITIAL_COUNT = Math.max(1, BATCH * PRE);
+const initialImages = imagesSorted.slice(0, INITIAL_COUNT);
+
 // タブ配置（center切替）
 const layoutAny = (cfg as any)?.layout as any;
 const tabsCenter = layoutAny?.tabs?.align === 'center';
@@ -54,12 +77,12 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
         <section id="panel-images" class="panel images" aria-label="images">
           {/* Greedy用: data-w/h/tags を付与し、カード要素に統一 */}
           <div id="grid-images" class="img-grid" role="list">
-            {imagesSorted.map((it) => (
+            {initialImages.map((it:any) => (
               <div class="card" data-w={it.w} data-h={it.h} data-tags={(it.tags ?? []).join(',')}>
                 <img
                   class="img"
-                  src={it.s}
-                  alt={`${it.slug}/${it.name}`}
+                  src={imgSmall(it)}
+                  alt={`${it.source}`}
                   loading="lazy"
                   decoding="async"
                   width={it.w}
@@ -67,12 +90,13 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
                 />
               </div>
             ))}
+            <div id="sentinel" aria-hidden="true"></div>
           </div>
         </section>
         <section id="panel-works" class="panel works" aria-label="works">
           <div id="grid-works" class="grid">
-            {cards.map((c) => (
-              <a class="card" href={`/work/${c.slug}/`} aria-label={`${c.title} を開く`} data-w="1" data-h="1" data-tags={(sets[c.slug]?.tags ?? []).join(',')}>
+            {cards.map((c:any) => (
+              <a class="card" href={`/work/${c.slug}/`} aria-label={`${c.title} を開く`} data-w="1" data-h="1" data-tags={(((sets as any)[c.slug]?.tags) ?? []).join(',')}>
                 <div class="thumb">
                   {c.coverSrc ? (
                     <img src={c.coverSrc} alt={c.title} loading="lazy" decoding="async" />
@@ -94,6 +118,11 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
   <script is:inline>
     {`
     (() => {
+      const BATCH = ${'${BATCH}'};
+      const INITIAL_COUNT = ${'${INITIAL_COUNT}'};
+      let index = INITIAL_COUNT;
+      let cache = null; // lazy load client index
+
       function setupGreedy(grid){
         if(!grid) return null;
         const styles = () => getComputedStyle(document.documentElement);
@@ -167,8 +196,71 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
         return api;
       }
 
-      const apiImages = setupGreedy(document.querySelector('#grid-images') || document.querySelector('.img-grid'));
+      const grid = document.querySelector('#grid-images') || document.querySelector('.img-grid');
+      const apiImages = setupGreedy(grid);
       window.GREEDY = { images: apiImages };
+
+      async function loadIndex(){
+        if (cache) return cache;
+        try{
+          const res = await fetch('/images-index.json', { cache: 'no-store' });
+          cache = await res.json();
+        }catch(e){ cache = []; }
+        return cache;
+      }
+
+      function appendItems(items){
+        if(!Array.isArray(items) || items.length===0) return;
+        const frag = document.createDocumentFragment();
+        for(const it of items){
+          const card = document.createElement('div');
+          card.className = 'card';
+          if (it.w) card.dataset.w = String(it.w);
+          if (it.h) card.dataset.h = String(it.h);
+          if (Array.isArray(it.tags)) card.dataset.tags = it.tags.join(',');
+          const img = document.createElement('img');
+          img.className = 'img';
+          img.loading = 'lazy';
+          img.decoding = 'async';
+          if (it.w) img.width = it.w;
+          if (it.h) img.height = it.h;
+          img.src = it.src;
+          img.alt = '';
+          card.appendChild(img);
+          frag.appendChild(card);
+        }
+        grid.appendChild(frag);
+        // 追記後レイアウト更新
+        try{ window.GREEDY?.images?.apply(); }catch{}
+      }
+
+      async function loadMore(){
+        const idx = await loadIndex();
+        if (!Array.isArray(idx) || index >= idx.length) return;
+        const next = idx.slice(index, index + BATCH);
+        index += next.length;
+        appendItems(next);
+      }
+
+      // IntersectionObserver で無限スクロール
+      const sentinel = document.getElementById('sentinel');
+      if (sentinel && 'IntersectionObserver' in window){
+        const io = new IntersectionObserver((entries) => {
+          for(const e of entries){
+            if(e.isIntersecting){ loadMore(); }
+          }
+        }, { rootMargin: '1000px 0px' });
+        io.observe(sentinel);
+      } else {
+        // フォールバック: スクロール末尾近くでロード
+        let t;
+        window.addEventListener('scroll', () => {
+          clearTimeout(t);
+          t = setTimeout(() => {
+            if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 1200)) loadMore();
+          }, 100);
+        }, { passive: true });
+      }
     })();
     `}
   </script>
