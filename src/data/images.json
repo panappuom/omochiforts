@@ -2553,43 +2553,6 @@
     }
   },
   {
-    "id": "01K3FCZP1B90S0R4K0HY9RM6PW",
-    "source": "website_img_slicesoflife.png",
-    "title": "",
-    "alt": "",
-    "series": [],
-    "characters": [],
-    "tags": [],
-    "createdAt": "2025-08-25T01:20:20.011Z",
-    "sortKey": 1756084820011,
-    "w": 1440,
-    "h": 1784,
-    "lqip": "data:image/webp;base64,UklGRlYAAABXRUJQVlA4WAoAAAAQAAAAFwAAHQAAQUxQSAkAAAABBxAREYiI/gcAVlA4ICYAAADQAgCdASoYAB4APtFiqk+oJaOiKAgBABoJaQAAPaOgAP7znYAAAA==",
-    "sizes": {
-      "s": {
-        "avif": "/assets/s/01K3FCZP1B90S0R4K0HY9RM6PW.avif",
-        "webp": "/assets/s/01K3FCZP1B90S0R4K0HY9RM6PW.webp"
-      },
-      "s2x": {
-        "avif": "/assets/s2x/01K3FCZP1B90S0R4K0HY9RM6PW.avif",
-        "webp": "/assets/s2x/01K3FCZP1B90S0R4K0HY9RM6PW.webp"
-      },
-      "l": {
-        "avif": "/assets/l/01K3FCZP1B90S0R4K0HY9RM6PW.avif",
-        "webp": "/assets/l/01K3FCZP1B90S0R4K0HY9RM6PW.webp"
-      },
-      "l2x": {
-        "avif": "/assets/l2x/01K3FCZP1B90S0R4K0HY9RM6PW.avif",
-        "webp": "/assets/l2x/01K3FCZP1B90S0R4K0HY9RM6PW.webp"
-      }
-    },
-    "caption": "",
-    "links": {
-      "products": [],
-      "related": []
-    }
-  },
-  {
     "id": "01K3FCZSQW3CF1JNJHW2N5WVZX",
     "source": "website_img_ss_amo_01.jpg",
     "title": "",
@@ -4488,7 +4451,7 @@
     "sortKey": 1756084980655,
     "w": 2400,
     "h": 686,
-    "lqip": "data:image/webp;base64,UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoYAAcAPtFUo0uoJKMhsAgBABoJaQAAeyAA/vOdgAA=",
+    "lqip": "data:image/webp;base64,UklGRpIAAABXRUJQVlA4IIYAAAAQBACdASoYAAcAPtFWo0uoJKMhsAgBABoJZQAD48IOl+Y+g9QOa1XaoAD+8jvRIrlimCtUvLxNr3GBWtXduLtCL4rWvaVBBsA6g5OBCOTi/sWm5fbMpi2hXBx2OupRrpm2gHVj3jf3ms5KhSeVeK1lIdsn5SrHsp4hQ8khx3V/Io7UibAAAA==",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FD4JXF35N36D0KVVNSPFH2.avif",
@@ -4525,7 +4488,7 @@
     "sortKey": 1756084986302,
     "w": 2400,
     "h": 686,
-    "lqip": "data:image/webp;base64,UklGRlQAAABXRUJQVlA4WAoAAAAQAAAAFwAABgAAQUxQSAkAAAABBxAREYiI/gcAVlA4ICQAAACwAgCdASoYAAcAPtFUo0uoJKMhsAgBABoJaQAAeyAA/vOdgAA=",
+    "lqip": "data:image/webp;base64,UklGRpgBAABXRUJQVlA4WAoAAAAQAAAAFwAABgAAQUxQSKQAAAABgKtt//nl/Xx/f9vKnppdR+DR7gDcaE2eutrsmhttm2dgu086iIhIkEQAQIIg8J8If0QkhEBQ1mRhlMsLkiCSIHPFm4Co0rDOnhneypg4D4NcSAA6ubK7vXg/4WV/jl+rq6Kr6hLGFrOBZn7g/i4uOeQ3fjjmsvWbJeZpoOxueqkkl9NSx1NHLlq4KKm46pKnCHab3NfiDteBYA0xhyhBCImwE1ZQOCDOAAAAEAUAnQEqGAAHAD7RVKNLqCSjIbAIAQAaCWwAnTKDGDkjuhGIhMYp1UjDe/2ANml+AAD+JuAa9Bwt7Gb7/s5xfrPVY/UraxoSB8hvGEeoM0l1ddQYcZIqXOFXhakCGql8ZZOghpIupbg2SEtYkbQSQYhRAv8bws96KsX7//c3MxOhuQq8btV9d0fv6r+xgqFQQPrmPyY/lQUdSNnXfIf8GTnv5PH4j0gvUP35oXFm4lFJ+LV4TDY4n2MLc7j32nXFnJCe/RZ7H/IlcGQAAAA=",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FD4RDYFXXDSH364HTN983J.avif",
@@ -4599,7 +4562,7 @@
     "sortKey": 1756084998950,
     "w": 1440,
     "h": 1784,
-    "lqip": "data:image/webp;base64,UklGRlYAAABXRUJQVlA4WAoAAAAQAAAAFwAAHQAAQUxQSAkAAAABBxAREYiI/gcAVlA4ICYAAADQAgCdASoYAB4APtFiqk+oJaOiKAgBABoJaQAAPaOgAP7znYAAAA==",
+    "lqip": "data:image/webp;base64,UklGRv4AAABXRUJQVlA4IPIAAABQBQCdASoYAB4APtFgqE+oJSOiKAgBABoJYwBU4GMGZ1Y6PmxhM4NLP6A29X45YboDgAAA/v0qQ5mygSr1bI7J4F2CwzDHj/C4qc6NV98xkFj2XLd6VlWOEGgQeQs/O9zLbwqJOjX3S0sEm2PqHsgxk78vag9yemmvlwVt44JcaogaexHBG1S3rCd/T9d+q55qceSwkB71KB/FEvK6njAICK4o8/Ika7zsvddjO1L3JJi5NLvVLacJlraWw98ANu+HjjtgykXD2DBSn0nqxKycTr7nVP2idZ2sIAouWJ2du7XVnjy03drt6rzhpw2/iYAAAA==",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FD54S69K7HJMV1GBY8T1RA.avif",
@@ -4636,7 +4599,7 @@
     "sortKey": 1756085010371,
     "w": 1440,
     "h": 1784,
-    "lqip": "data:image/webp;base64,UklGRlYAAABXRUJQVlA4WAoAAAAQAAAAFwAAHQAAQUxQSAkAAAABBxAREYiI/gcAVlA4ICYAAADQAgCdASoYAB4APtFiqk+oJaOiKAgBABoJaQAAPaOgAP7znYAAAA==",
+    "lqip": "data:image/webp;base64,UklGRiQBAABXRUJQVlA4IBgBAACQBgCdASoYAB4APtFao02oJSMiKA1RABoJYwDGnNjcAjgQgGrahtf6Kk5AGeUWnWeqbgAaNiGcxnAiMxgAAP78E+8kuzdhkaVj8jz6HTKD4BbnhGUBHrGWaeWGoIxQ4+Z1NW0AUpenLynnzJeACtXq1Yv/wZgIO487JSTeAkKL3Mtu7A7vJFIJi4yeY4p6hf9Ukb9QJwKk6aa0CPFg835ZP6b/UAmsBHtzP3w65kfY6umDUCZrDORPnRDsuQRI2vwxU3gaSzV2JXKQ0oqaXTSj8ZgsH4u0dty+vUFUdwEuE5avI+WgzLbEXDTgsuCXmHPkuO7HLrRm4pbAIqIBQakJPZf/9k6zeA+wEr9x8XCoaBsSC6jhWAAA",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FD5FY3KTRMKCXJSRQWTG6G.avif",
@@ -5487,7 +5450,7 @@
     "sortKey": 1756085103185,
     "w": 2080,
     "h": 1576,
-    "lqip": "data:image/webp;base64,UklGRjIAAABXRUJQVlA4ICYAAADQAgCdASoYABIAPtFiqk+oJaOiKAgBABoJaQAAPaOgAP7znYAAAA==",
+    "lqip": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAAAwBACdASoYABIAPtFYpU0oJSOiMBgIAQAaCWkAACZ76vO2bK7pHmy0iAAA/vJqs0UgB9YA/a76ttZZMyDDN/bgLozmKJ7erKj/s972xBPf5QxERDqIMLzt4jwLAZxLbBpAg4w2vl+UOmy71L4LbZSwutvZwAAA",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FD8AJHGSQ8CWANQKVHPQZT.avif",
@@ -5513,6 +5476,43 @@
     }
   },
   {
+    "id": "01K3FD8GRX82N8V0HNSCGA37RJ",
+    "source": "真っ黒化/キャラ_あも_スマホケース_iPhone5ケース公式_img_hr.png",
+    "title": "",
+    "alt": "",
+    "series": [],
+    "characters": [],
+    "tags": [],
+    "createdAt": "2025-08-25T01:25:09.533Z",
+    "sortKey": 1756085109533,
+    "w": 1360,
+    "h": 8,
+    "lqip": "data:image/webp;base64,UklGRj4AAABXRUJQVlA4IDIAAADQAgCdASoYAAEAPtFUo0uoJKMhsAgBABoJZwAAe/QAAP7eZaCgYvanSeBgLxe3sgAAAA==",
+    "sizes": {
+      "s": {
+        "avif": "/assets/s/01K3FD8GRX82N8V0HNSCGA37RJ.avif",
+        "webp": "/assets/s/01K3FD8GRX82N8V0HNSCGA37RJ.webp"
+      },
+      "s2x": {
+        "avif": "/assets/s2x/01K3FD8GRX82N8V0HNSCGA37RJ.avif",
+        "webp": "/assets/s2x/01K3FD8GRX82N8V0HNSCGA37RJ.webp"
+      },
+      "l": {
+        "avif": "/assets/l/01K3FD8GRX82N8V0HNSCGA37RJ.avif",
+        "webp": "/assets/l/01K3FD8GRX82N8V0HNSCGA37RJ.webp"
+      },
+      "l2x": {
+        "avif": "/assets/l2x/01K3FD8GRX82N8V0HNSCGA37RJ.avif",
+        "webp": "/assets/l2x/01K3FD8GRX82N8V0HNSCGA37RJ.webp"
+      }
+    },
+    "caption": "",
+    "links": {
+      "products": [],
+      "related": []
+    }
+  },
+  {
     "id": "01K3FD8GRX94F0V0CV0TBAV5NT",
     "source": "キャラ_あも_スマホケース_iPhone5ケース公式_img_hr.png",
     "title": "",
@@ -5524,7 +5524,7 @@
     "sortKey": 1756085109533,
     "w": 1360,
     "h": 8,
-    "lqip": "data:image/webp;base64,UklGRj4AAABXRUJQVlA4IDIAAADQAgCdASoYAAEAPtFUo0uoJKMhsAgBABoJZwAAe/QAAP7eZaCgYvanSeBgLxe3sgAAAA==",
+    "lqip": "data:image/webp;base64,UklGRjgAAABXRUJQVlA4ICwAAADQAgCdASoYAAEAPtFUo0uoJKMhsAgBABoJZwAAifQAAP7ffPmy2ZPnpngAAA==",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FD8GRX94F0V0CV0TBAV5NT.avif",
@@ -6893,7 +6893,7 @@
     "sortKey": 1756085214477,
     "w": 1220,
     "h": 684,
-    "lqip": "data:image/webp;base64,UklGRiQBAABXRUJQVlA4WAoAAAAQAAAAFwAADAAAQUxQSMEAAAABuYzof2jgKJJk2eEvebqozi/46xrVjKuin7tFr/VgKJDb7UdMQLy+8eHZl2+37v368eATgncc1HZqsq3IFdR2YFJRYdQbTRIooOHCZJOcpksswjtNlJAweF0z2ox6UrsesfUOZl5ii4l2BQVWz7YQUGDiSCtAN+HM/8yYDbqkBkwmcwI9AQepNSwAGWeHDG1hXdckXhQYoNBmselyRbJOCompyMvhOeiKcW1lcDpBigH5EMX648lNAWqCibXdMCrGAFZQOCA8AAAA8AIAnQEqGAANAD7RVqNLqCSjIbAIAQAaCWYAnQAyteAA/tptpLeESr3pnmF4k2AReY3dP2cAGsABHeQA",
+    "lqip": "data:image/webp;base64,UklGRsoBAABXRUJQVlA4WAoAAAAQAAAAFwAADAAAQUxQSAcBAAABkHPbtqnJqvd5Zdu2bdtGZNu2I9uIEDKy2bbdHdlmuSoiJoDPidfXhNfPNFTMgxtEAAgAwenV0sa7wbfzzxKbpcFCDBExLCwg9J+rXmkfy8moCDMEiwCBhZsFxEswUCYRvoFIPV9Lvd2GWXvhjMWixvEFBYAVZqOPd64t9U/cerM6s35x7/mLvb1AEAPJoR7P+uH5WLcR74o0vZnRnLRr5QBBJZbAzWtrI6gGLoBAkHHC8Swk2fEkL8FmI16BYRgGxxMRJq792Bva3vt3gR8EYo4BCAYNe783b/78cD1OGYSTCZLP9sbmstrvxb70AQvoFCzle94F7ej+moMzEiy05e0gWcZyDABWUDggnAAAADAEAJ0BKhgADQA+0VSkS6gko6GwCAEAGgllAMoBi7jfagMHa0xcJJmUAAD+8dCRgxUBq/CV5XGzRip6RwN7Bbc4Au9tEJewQft/MO9DzhFguT7SQFR/QSWvZ97BEFDPwFJU45gPB4arjeW/K8XUBixMSFquauejuYv5yFoI14jJ+Gm/AL6Eb2Y7O/+7K18mhgHjEW9CGPRQ36eAAA==",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FDBQ8D9VHW4AEPNFWF4526.avif",
@@ -6910,6 +6910,43 @@
       "l2x": {
         "avif": "/assets/l2x/01K3FDBQ8D9VHW4AEPNFWF4526.avif",
         "webp": "/assets/l2x/01K3FDBQ8D9VHW4AEPNFWF4526.webp"
+      }
+    },
+    "caption": "",
+    "links": {
+      "products": [],
+      "related": []
+    }
+  },
+  {
+    "id": "01K3FDBQ8DHECN0GFP81QYT1FT",
+    "source": "真っ黒化/キャラ_あも_ロゴ_あもロゴ_2.png",
+    "title": "",
+    "alt": "",
+    "series": [],
+    "characters": [],
+    "tags": [],
+    "createdAt": "2025-08-25T01:26:54.477Z",
+    "sortKey": 1756085214477,
+    "w": 1220,
+    "h": 684,
+    "lqip": "data:image/webp;base64,UklGRiQBAABXRUJQVlA4WAoAAAAQAAAAFwAADAAAQUxQSMEAAAABuYzof2jgKJJk2eEvebqozi/46xrVjKuin7tFr/VgKJDb7UdMQLy+8eHZl2+37v368eATgncc1HZqsq3IFdR2YFJRYdQbTRIooOHCZJOcpksswjtNlJAweF0z2ox6UrsesfUOZl5ii4l2BQVWz7YQUGDiSCtAN+HM/8yYDbqkBkwmcwI9AQepNSwAGWeHDG1hXdckXhQYoNBmselyRbJOCompyMvhOeiKcW1lcDpBigH5EMX648lNAWqCibXdMCrGAFZQOCA8AAAA8AIAnQEqGAANAD7RVqNLqCSjIbAIAQAaCWYAnQAyteAA/tptpLeESr3pnmF4k2AReY3dP2cAGsABHeQA",
+    "sizes": {
+      "s": {
+        "avif": "/assets/s/01K3FDBQ8DHECN0GFP81QYT1FT.avif",
+        "webp": "/assets/s/01K3FDBQ8DHECN0GFP81QYT1FT.webp"
+      },
+      "s2x": {
+        "avif": "/assets/s2x/01K3FDBQ8DHECN0GFP81QYT1FT.avif",
+        "webp": "/assets/s2x/01K3FDBQ8DHECN0GFP81QYT1FT.webp"
+      },
+      "l": {
+        "avif": "/assets/l/01K3FDBQ8DHECN0GFP81QYT1FT.avif",
+        "webp": "/assets/l/01K3FDBQ8DHECN0GFP81QYT1FT.webp"
+      },
+      "l2x": {
+        "avif": "/assets/l2x/01K3FDBQ8DHECN0GFP81QYT1FT.avif",
+        "webp": "/assets/l2x/01K3FDBQ8DHECN0GFP81QYT1FT.webp"
       }
     },
     "caption": "",
@@ -8484,7 +8521,7 @@
     "sortKey": 1756085408044,
     "w": 1800,
     "h": 1780,
-    "lqip": "data:image/webp;base64,UklGRlYAAABXRUJQVlA4WAoAAAAQAAAAFwAAFwAAQUxQSAkAAAABBxAREYiI/gcAVlA4ICYAAADQAgCdASoYABgAPtFiqk+oJaOiKAgBABoJaQAAPaOgAP7znYAAAA==",
+    "lqip": "data:image/webp;base64,UklGRm4CAABXRUJQVlA4WAoAAAAQAAAAFwAAFwAAQUxQSAQBAAABkHPbtrG9+vd9nvKzOnb29/0Bu7RZMlVSOSlt23YqO61TGZ2dnHvPjp8bERMAAAGQ3bvs1JVzu2dWx8AE+KsJUXHwA/+uj+enIfzDGMz+QVpxzllxyhetCP/AGlpR5V/VCd0YQoSYwR+O/21VGhGg8D0dIzo+TAI2UhhZOAvpr6nRHO/FDtLRo7JqA8WH5bybdH6OvKL6ufLRj+Ott34sL9yn87NlD62f7j4vjo+SY27TRhOOA42iGkV4wCDAiFD/Q0nH47EwCFH/maoi1loRVcvdMAYIUClWlH//9u0HzyDEH6VflSfaFh84vn3RcM5Z8goMABg07FyVDQMABvmb1xb+AVZQOCBEAQAAEAcAnQEqGAAYAD7RWqhOKCSkIigKqQAaCWwAnTMceDrZ8V1pme8sERyFhicE16ehM/C+REjuRP2nssMS24Q0MQAA/vFJI607HqYdhBTKA2FLNAgueMM0EN4k1vnHzL3duHFr2zo8+0rvVGNiM/ufhb3jnirMPGTOdIjw7R5+cKbUxqiXGD4evr2G3Ajnu0iQ7cT4AdoqB7FfH8+8Tf84YxQ5FpDPFH9U9Oog3kJghFtQuN5lAuAe2YAU804nvG2ttECqvTQ+pUwdaWDNL6myIA6Kq4ZPSz7q9flgF6omjx3mt3vveJNZbyZUq9vGDeNgfy1fcR/UjN2jMAe2QTzqu9KoXRm/gv8b/k/oKH4CF6J4VXcIqUP8LTHZY4bbrSc50F7MNhU/GteN+R5dfdk7J0th/4slrHObS+d4ndVz/Ywy2oAA",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FDHM9CNPG7NN7BD0R2HT71.avif",
@@ -8501,6 +8538,43 @@
       "l2x": {
         "avif": "/assets/l2x/01K3FDHM9CNPG7NN7BD0R2HT71.avif",
         "webp": "/assets/l2x/01K3FDHM9CNPG7NN7BD0R2HT71.webp"
+      }
+    },
+    "caption": "",
+    "links": {
+      "products": [],
+      "related": []
+    }
+  },
+  {
+    "id": "01K3FDHM9CW7Q80Q0SXQ4Z56DT",
+    "source": "真っ黒化/キャラ_たらこくん_デフォ素材_いくらくん.png",
+    "title": "",
+    "alt": "",
+    "series": [],
+    "characters": [],
+    "tags": [],
+    "createdAt": "2025-08-25T01:30:08.044Z",
+    "sortKey": 1756085408044,
+    "w": 1800,
+    "h": 1780,
+    "lqip": "data:image/webp;base64,UklGRm4BAABXRUJQVlA4WAoAAAAQAAAAFwAAFwAAQUxQSIcAAAABgGJt27Lo+f4v4tZZge/AdQdUjySaVk/sgESlkliG+wJ8Zj7BrU2MiAkAAAWwxlu9Qb+T96hAFDwkFO7u9vxYTisW0DtCUPg7nzkTQnAm5HkVA71D+8yZlOeHUrCzSICCInf+5fJlJlgQCmy7szy/Kc5DI1A9LDZvL/ZZEK3ms/gi+TD+nwEAVlA4IMAAAADQBACdASoYABgAPtFepUyoJaOiMBgIAQAaCWwAI8A3jYiIAsLMWfFPs8THfCL0CAD+8UkY5CDhTiSoIYpiqBoi/djw0mewZ47Ipn7jmZ2IjOjZ0Mo6pLQj2sQe0yeGz/g4iP37d1HAYR6A8CpqH/+1ylZONZPqzVl/s24RVJ2U57Bu5/4OTFQ+MgT5tDAld8rV8fswlmqMGKDfW5tr3KQln2y3TWfUTnjnexpabUzp83/H/HeEvmvraMnmbwAAAAA=",
+    "sizes": {
+      "s": {
+        "avif": "/assets/s/01K3FDHM9CW7Q80Q0SXQ4Z56DT.avif",
+        "webp": "/assets/s/01K3FDHM9CW7Q80Q0SXQ4Z56DT.webp"
+      },
+      "s2x": {
+        "avif": "/assets/s2x/01K3FDHM9CW7Q80Q0SXQ4Z56DT.avif",
+        "webp": "/assets/s2x/01K3FDHM9CW7Q80Q0SXQ4Z56DT.webp"
+      },
+      "l": {
+        "avif": "/assets/l/01K3FDHM9CW7Q80Q0SXQ4Z56DT.avif",
+        "webp": "/assets/l/01K3FDHM9CW7Q80Q0SXQ4Z56DT.webp"
+      },
+      "l2x": {
+        "avif": "/assets/l2x/01K3FDHM9CW7Q80Q0SXQ4Z56DT.avif",
+        "webp": "/assets/l2x/01K3FDHM9CW7Q80Q0SXQ4Z56DT.webp"
       }
     },
     "caption": "",
@@ -8632,7 +8706,7 @@
     "sortKey": 1756085427478,
     "w": 1800,
     "h": 1640,
-    "lqip": "data:image/webp;base64,UklGRsoBAABXRUJQVlA4WAoAAAAQAAAAFwAAFQAAQUxQSL4AAAABgKJtm6rlPTPoAv6KS3TpXCT3piug0bno7uzjT7hET1Y1ucvMfC9+bAMRMQEAlIdE19jKyeXF0eJIZwKexk+FrOkrCn8VXs/nQQPQ6LiiOGNFxDljhff9UFDoFhrHf4oRDkCj4oGWPp2YWiBJQ9+WW7rGUvzRsW6YhgFaji/TBrN2SgnC8fAxGOHjVVA3e3RBOB4s0AZhmWyhkwANB9O26ehbeJuH+ve31ze/zxwCVHFpSYCZgIdAPQAqUMQQVlA4IOYAAABwBQCdASoYABYAPtFWpE0oJKOiMBgIAQAaCUAZg7FoC03RvzN+4SuYq/8h9D+Dlsy74RhAAP7dSBCf3e/xLc9itpqzZAQkdn5s++AtIB8vU3RSC66fLLROut740Rx6/AJODSUheklhTZfafsuZlt4bS6jRBzzYUhzivMq2u9d8aae/PSpcg+Z/I/BXsJxGMUAmrjF4uSfPVSClUzUr5i3OO4s47+z8eiRKt7D/H4V8hDb7a+J/Av/W7sMtYUXRE/dLbx4bfECCDpZz+Bf+t/0ryHECH/JfTofLffm3TeZKnAiZBeYAAA==",
+    "lqip": "data:image/webp;base64,UklGRiICAABXRUJQVlA4WAoAAAAQAAAAFwAAFQAAQUxQSPUAAAABkKtt2yFG78zEdjqeAivbTscjMNukt1Oms52st7RtVTbm/793PXMIETEBAEwDkXXDx++8fHHrcLA2EoaFP03ETLyi8K/C1zMJsABYqHlF0bYSEa1tJXzfDBMm6oW25n+KLWyBhcQPVHSoxc4GtmnTseJZK1VRnFEzd4A2XVQcOUblzsmnFDc0b350R/jxlVtvLlK7oXl5lsoNxe0Kane6vc5RORO+SUCxaO1EfrAfJvoo4kBz3RMw0faNFKX/VEoonPOHAXiijd81/6l/cBuWAcBCPvlk+drjl88eXJ5/Qk7CA381WtbT4BESHRlgofTqTjwMAABWUDggBgEAAFAFAJ0BKhgAFgA+xU6iS6ekIyGwDADwGIlAGYO09zObc6GvWGSERHn17duZg55qjv/PQAD+3d+U6suWP8RNbzOlkbUKrujh+KXbKRltyoT3AVn+un2ETI+YSDAizKZhMibjedlHBK1d/DNNY3TpEffXNYyw1oFxhIAfuU4H2f7xLd+aH1eH6Gk4P07PJPMKRDzWZ7pgNbIw990/TFkBWokIe93NLlkgHe2wLO8+pkwNK/k/T4wGnJwDUtWcnPzw7LldtZ8FRR5EpA90bNgkPYJjl1YBJiX2C9FJzIyuFhIDSdCkU6OgtZ3dnvSNUvZpbkndVdVS4DBw3dfzyhQ/PkTSp3pr4AA=",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FDJ78P825MHQ03NJV9NBM4.avif",
@@ -8649,6 +8723,43 @@
       "l2x": {
         "avif": "/assets/l2x/01K3FDJ78P825MHQ03NJV9NBM4.avif",
         "webp": "/assets/l2x/01K3FDJ78P825MHQ03NJV9NBM4.webp"
+      }
+    },
+    "caption": "",
+    "links": {
+      "products": [],
+      "related": []
+    }
+  },
+  {
+    "id": "01K3FDJ78PE01DRWXE6X0V5NGW",
+    "source": "真っ黒化/キャラ_たらこくん_デフォ素材_キャビア様.png",
+    "title": "",
+    "alt": "",
+    "series": [],
+    "characters": [],
+    "tags": [],
+    "createdAt": "2025-08-25T01:30:27.478Z",
+    "sortKey": 1756085427478,
+    "w": 1800,
+    "h": 1640,
+    "lqip": "data:image/webp;base64,UklGRsoBAABXRUJQVlA4WAoAAAAQAAAAFwAAFQAAQUxQSL4AAAABgKJtm6rlPTPoAv6KS3TpXCT3piug0bno7uzjT7hET1Y1ucvMfC9+bAMRMQEAlIdE19jKyeXF0eJIZwKexk+FrOkrCn8VXs/nQQPQ6LiiOGNFxDljhff9UFDoFhrHf4oRDkCj4oGWPp2YWiBJQ9+WW7rGUvzRsW6YhgFaji/TBrN2SgnC8fAxGOHjVVA3e3RBOB4s0AZhmWyhkwANB9O26ehbeJuH+ve31ze/zxwCVHFpSYCZgIdAPQAqUMQQVlA4IOYAAABwBQCdASoYABYAPtFWpE0oJKOiMBgIAQAaCUAZg7FoC03RvzN+4SuYq/8h9D+Dlsy74RhAAP7dSBCf3e/xLc9itpqzZAQkdn5s++AtIB8vU3RSC66fLLROut740Rx6/AJODSUheklhTZfafsuZlt4bS6jRBzzYUhzivMq2u9d8aae/PSpcg+Z/I/BXsJxGMUAmrjF4uSfPVSClUzUr5i3OO4s47+z8eiRKt7D/H4V8hDb7a+J/Av/W7sMtYUXRE/dLbx4bfECCDpZz+Bf+t/0ryHECH/JfTofLffm3TeZKnAiZBeYAAA==",
+    "sizes": {
+      "s": {
+        "avif": "/assets/s/01K3FDJ78PE01DRWXE6X0V5NGW.avif",
+        "webp": "/assets/s/01K3FDJ78PE01DRWXE6X0V5NGW.webp"
+      },
+      "s2x": {
+        "avif": "/assets/s2x/01K3FDJ78PE01DRWXE6X0V5NGW.avif",
+        "webp": "/assets/s2x/01K3FDJ78PE01DRWXE6X0V5NGW.webp"
+      },
+      "l": {
+        "avif": "/assets/l/01K3FDJ78PE01DRWXE6X0V5NGW.avif",
+        "webp": "/assets/l/01K3FDJ78PE01DRWXE6X0V5NGW.webp"
+      },
+      "l2x": {
+        "avif": "/assets/l2x/01K3FDJ78PE01DRWXE6X0V5NGW.avif",
+        "webp": "/assets/l2x/01K3FDJ78PE01DRWXE6X0V5NGW.webp"
       }
     },
     "caption": "",
@@ -12295,7 +12406,7 @@
     "sortKey": 1756085768559,
     "w": 916,
     "h": 3000,
-    "lqip": "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAAAwAwCdASoYAE8APtForlIoJiQio0gBABoJaQAAGPzlxeSAAP7znYAAAAA=",
+    "lqip": "data:image/webp;base64,UklGRtABAABXRUJQVlA4IMQBAABwCQCdASoYAE8APtFQoUuoJCMhsBZuYQAaCWQAyskAEoqMNbK0zVWK31Lv7Ml/K/bhuAt57SsuZSzdHXbevaY3vS6RS3eD09Wp4bk6s6y3EVuXBgAA/voVf+vQdWqLvlHcmeZMVoguMa4zdNHAba3JihSpDvQH2houD8lettorKD//KkfYhuP5JAPU8U2fVcrtKm6w3irhZt6nm1JE416X07H9x1Zva7oPzZOUAaRQPi0Ype5uZ98XXJjE1PBpJvUCoryyYJ14XoIEB4ZBYy2/g3/HsB2HLmhCgxFA78tKXWxjqVMOKYAB/CcNwrghOyS0W3/Uq57oqusZ9ONn6qHHl4E899M7TWs8jVXvdmVigweG79mwxmzQDddamFGPZYVgT35ZzKkfvRHHPySb1QPm/nWZW2Z6pFcS0+BeJbuPByNx/g9mRzWecNGEh3j70RnBOdZ4ENXSva0f7TguLhPOW+3skRGSU89R0Xl6N3wUR7/7MxUmK7vky3Lb6+WbpzYcAOxaYkKnHLt1+3KnHx1/QhDShIsyVdTb6zpWUakKrbEB89F1UmRhKpMCDta2T8siNs/cLQcFojOO4c07R6x96pAAAA==",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FDWMBF8CD0C0EQ8TADE3QG.avif",
@@ -14145,7 +14256,7 @@
     "sortKey": 1756085952933,
     "w": 1368,
     "h": 1312,
-    "lqip": "data:image/webp;base64,UklGRjIAAABXRUJQVlA4ICYAAADQAgCdASoYABcAPtFiqk+oJaOiKAgBABoJaQAAPaOgAP7znYAAAA==",
+    "lqip": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAADQBACdASoYABcAPtFSoUwoJCMiMBgMAQAaCWcAAC6N0z6Ni04yN4JQK30AQxqgAAD+9gq/2BT84XpkQWb8A/BVPqp2kNAodzQhGEm0wSA/eGXGDHj6oV81Oo/fqFRPpobbW1Bbl/yaQUdPxQ7lA5GG8NtfVvNkAAAAAA==",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FE28D5GFT81Z6537C0T368.avif",
@@ -17623,7 +17734,7 @@
     "sortKey": 1756086194648,
     "w": 1360,
     "h": 1248,
-    "lqip": "data:image/webp;base64,UklGRjIAAABXRUJQVlA4ICYAAADQAgCdASoYABYAPtFiqk+oJaOiKAgBABoJaQAAPaOgAP7znYAAAA==",
+    "lqip": "data:image/webp;base64,UklGRowAAABXRUJQVlA4IIAAAACQBACdASoYABYAPtFYpUyoJSOiKA1RABoJZwAIEAHsB6xOpi+tDNQTxvDSDAAA/vYJyKaCcvMdqXjmE+QjvP+F29LaE6zj/HwacUOBgvYUhv7ltOTbnHnWRG4Ogsk2lt7JdT/nEGqridgMjzdPgRVNhLQavX3VCCCve24h5AAAAA==",
     "sizes": {
       "s": {
         "avif": "/assets/s/01K3FE9MERNBV11B0GSA1PY5EJ.avif",
@@ -18084,6 +18195,43 @@
       "l2x": {
         "avif": "/assets/l2x/01K3FEADDB6GNMNAYQFCQP8841.avif",
         "webp": "/assets/l2x/01K3FEADDB6GNMNAYQFCQP8841.webp"
+      }
+    },
+    "caption": "",
+    "links": {
+      "products": [],
+      "related": []
+    }
+  },
+  {
+    "id": "01K3FSMVF5GRTJ3R6B6AZFCBJ9",
+    "source": "website_img_slicesoflife.png",
+    "title": "",
+    "alt": "",
+    "series": [],
+    "characters": [],
+    "tags": [],
+    "createdAt": "2025-08-25T05:01:36.613Z",
+    "sortKey": 1756098096613,
+    "w": 1440,
+    "h": 1784,
+    "lqip": "data:image/webp;base64,UklGRiQBAABXRUJQVlA4IBgBAACQBgCdASoYAB4APtFao02oJSMiKA1RABoJYwDGnNjcAjgQgGrahtf6Kk5AGeUWnWeqbgAaNiGcxnAiMxgAAP78E+8kuzdhkaVj8jz6HTKD4BbnhGUBHrGWaeWGoIxQ4+Z1NW0AUpenLynnzJeACtXq1Yv/wZgIO487JSTeAkKL3Mtu7A7vJFIJi4yeY4p6hf9Ukb9QJwKk6aa0CPFg835ZP6b/UAmsBHtzP3w65kfY6umDUCZrDORPnRDsuQRI2vwxU3gaSzV2JXKQ0oqaXTSj8ZgsH4u0dty+vUFUdwEuE5avI+WgzLbEXDTgsuCXmHPkuO7HLrRm4pbAIqIBQakJPZf/9k6zeA+wEr9x8XCoaBsSC6jhWAAA",
+    "sizes": {
+      "s": {
+        "avif": "/assets/s/01K3FSMVF5GRTJ3R6B6AZFCBJ9.avif",
+        "webp": "/assets/s/01K3FSMVF5GRTJ3R6B6AZFCBJ9.webp"
+      },
+      "s2x": {
+        "avif": "/assets/s2x/01K3FSMVF5GRTJ3R6B6AZFCBJ9.avif",
+        "webp": "/assets/s2x/01K3FSMVF5GRTJ3R6B6AZFCBJ9.webp"
+      },
+      "l": {
+        "avif": "/assets/l/01K3FSMVF5GRTJ3R6B6AZFCBJ9.avif",
+        "webp": "/assets/l/01K3FSMVF5GRTJ3R6B6AZFCBJ9.webp"
+      },
+      "l2x": {
+        "avif": "/assets/l2x/01K3FSMVF5GRTJ3R6B6AZFCBJ9.avif",
+        "webp": "/assets/l2x/01K3FSMVF5GRTJ3R6B6AZFCBJ9.webp"
       }
     },
     "caption": "",

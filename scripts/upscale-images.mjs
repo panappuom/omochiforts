@@ -16,6 +16,7 @@ const siteCfg = require("../src/config/site.config.json");
 const UPS = siteCfg.upscale ?? {};
 const DEBUG = UPS.debug ?? {};
 const RGS = UPS.realesrgan ?? {};
+const W2X = UPS.waifu2x ?? {};
 const DETECT_BLACK = !!DEBUG.detectBlack;
 const OVERRIDES = UPS.overrides ?? {};
 
@@ -38,6 +39,13 @@ const RG_GPU = (typeof RGS.gpu !== "undefined") ? Number(RGS.gpu) : 0; // -1=CPU
 const RG_RETRIES = Array.isArray(RGS.retryOnBlack) ? RGS.retryOnBlack : [];
 const BLACK_THRESH = Number.isFinite(RGS.blackThreshold) ? Number(RGS.blackThreshold) : 0.01;
 
+// Waifu2x config
+const W2X_MODEL = W2X.model ?? "models-cunet";
+const W2X_TILE = Number.isFinite(W2X.tile) ? Number(W2X.tile) : 512;
+const W2X_NOISE = Number.isFinite(W2X.noise) ? Number(W2X.noise) : 1;
+const W2X_GPU = (typeof W2X.gpu !== "undefined") ? Number(W2X.gpu) : 0; // -1=CPU
+const W2X_RETRIES = Array.isArray(W2X.retryOnBlack) ? W2X.retryOnBlack : [];
+
 // 拡張子と閾値
 const exts = new Set(UPS.extensions ?? [".jpg", ".jpeg", ".png", ".webp"]);
 const TARGET_UPSCALED = UPS.targetUpscaled ?? 2000;
@@ -57,6 +65,7 @@ console.log("Effective Config (upscale):", JSON.stringify({
   minForEasy: MIN_FOR_EASY,
   minForHard: MIN_FOR_HARD,
   realesrgan: { modelName: RG_MODEL, tile: RG_TILE, format: RG_FORMAT, flattenBefore: FLATTEN_BEFORE, gpu: RG_GPU, retryOnBlack: RG_RETRIES },
+  waifu2x: { model: W2X_MODEL, tile: W2X_TILE, noise: W2X_NOISE, gpu: W2X_GPU, retryOnBlack: W2X_RETRIES },
   debug: { keepTemp: KEEP_TEMP, dir: DEBUG_DIR, detectBlack: !!DEBUG.detectBlack, blackThreshold: RGS.blackThreshold ?? 0.01 }
 }, null, 2));
 
@@ -158,9 +167,10 @@ async function listAvailableModels() {
   return Array.from(set).sort();
 }
 
-async function runWaifu2x(input, output, { scale=2, noise=1, tile=512, model="models-cunet" } = {}) {
-  console.log(`→ Waifu2x: s=${scale} n=${noise} model=${model}`);
-  try {
+async function runWaifu2x(input, output, { scale=2, noise=W2X_NOISE, tile=W2X_TILE, model=W2X_MODEL, gpu=W2X_GPU } = {}) {
+  async function execOnce(opts){
+    const { scale, noise, tile, model, gpu } = opts;
+    console.log(`→ Waifu2x: s=${scale} n=${noise} t=${tile} model=${model}${(typeof gpu!=="undefined")?` -g ${gpu}`:""}`);
     await execFileAsync(
       WAIFU2X,
       [
@@ -169,12 +179,45 @@ async function runWaifu2x(input, output, { scale=2, noise=1, tile=512, model="mo
         "-s", String(scale),
         "-n", String(noise),
         "-t", String(tile),
-        "-m", model
+        "-m", model,
+        ...(typeof gpu!=="undefined" ? ["-g", String(gpu)] : [])
       ],
       { cwd: path.dirname(WAIFU2X) }
     );
     await logLine({ src: input, out: output, method: "Waifu2x", model, scale: `${scale}x` });
     await dumpTemp(output, `w2x_${scale}x_${model}`);
+  }
+
+  try {
+    // First attempt
+    await execOnce({ scale, noise, tile, model, gpu });
+
+    // Detect black and retry if enabled
+    if (DETECT_BLACK && await isBlackImage(output, BLACK_THRESH)) {
+      console.warn(`Waifu2x produced near-black output (<=${BLACK_THRESH}). Retrying with waifu2x.retryOnBlack...`);
+      for (const step of W2X_RETRIES) {
+        try {
+          await execOnce({
+            scale,
+            noise: (typeof step.noise!=="undefined") ? step.noise : noise,
+            tile:  (typeof step.tile!=="undefined")  ? step.tile  : tile,
+            model: (typeof step.model!=="undefined") ? step.model : model,
+            gpu:   (typeof step.gpu!=="undefined")   ? step.gpu   : gpu
+          });
+          if (!(await isBlackImage(output, BLACK_THRESH))) return;
+        } catch {}
+      }
+
+      // Final fallback to RealESRGAN if still black and available
+      if (fs.existsSync(REALESRGAN)) {
+        console.warn("Waifu2x remained black after retries. Falling back to RealESRGAN...");
+        try {
+          await runRealESRGAN(input, output, { scale: Number(scale) === 4 ? 4 : 2 });
+          if (!(await isBlackImage(output, BLACK_THRESH))) return;
+        } catch {}
+      }
+      throw new Error("waifu2x_black_after_retries");
+    }
   } catch (err) {
     console.error("Waifu2x ERROR:", err.stderr?.toString?.() || err.message);
     throw err;
@@ -185,9 +228,12 @@ async function runRealESRGAN(input, output, { scale=2, tile=RG_TILE, modelName=R
   const doFlattenCfg = (typeof flattenBefore === "undefined") ? FLATTEN_BEFORE : !!flattenBefore;
   // 入力メタデータ取得（Sharpが読めない形式は許容し、アルファ無し扱いで続行）
   let hasAlphaIn = false;
+  let inW = 0, inH = 0;
   try {
     const inMeta = await sharp(input).metadata();
     hasAlphaIn = !!inMeta.hasAlpha;
+    inW = inMeta.width || 0;
+    inH = inMeta.height || 0;
   } catch {
     hasAlphaIn = false; // 取得できない形式（例: 特殊BMP）はアルファ無し扱い
   }
@@ -251,6 +297,22 @@ async function runRealESRGAN(input, output, { scale=2, tile=RG_TILE, modelName=R
           await dumpTemp(output, "reapply_alpha");
         }
       } catch {}
+    }
+
+    // 出力サイズの妥当性チェック（稀にタイル起因で下部/右部欠けが起きる）
+    try {
+      const outMeta2 = await sharp(output).metadata();
+      const outW = outMeta2.width || 0;
+      const outH = outMeta2.height || 0;
+      const expectW = inW * scale;
+      const expectH = inH * scale;
+      // 許容誤差（1px）を超えて小さい場合は異常として扱う
+      if ((expectW && outW + 1 < expectW) || (expectH && outH + 1 < expectH)) {
+        throw new Error(`realesrgan_output_cropped expect=${expectW}x${expectH} actual=${outW}x${outH}`);
+      }
+    } catch (e) {
+      // サイズ検証の例外は上位のリトライ機構に乗せる
+      throw e;
     }
   } catch (err) {
     console.error("Real-ESRGAN ERROR:", err.stderr?.toString?.() || err.message);
