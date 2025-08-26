@@ -116,36 +116,42 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
     </div>
   </main>
   <script is:inline>
-    // ===== debug logger（1つだけでOK） =====
-    window.__DBG = true; // falseにすると静かになります
-    const log  = (...a) => { if (window.__DBG) console.log(...a); };
-    const warn = (...a) => { if (window.__DBG) console.warn(...a); };
-    const err  = (...a) => console.error(...a);
-    
-    window.addEventListener('error', e => err('[error]', e.message, e.filename, e.lineno));
-    window.addEventListener('unhandledrejection', e => err('[promise]', e.reason));
-    
-    // 起動確認
-    log('[boot] gallery inline script running');
-    
-    // ===== ここから本体 =====
     (() => {
-      const BATCH = 60;                 // 1回に追加する枚数（あなたの設定に合わせてOK）
-      let index = window.INITIAL_COUNT || 120; // 初期表示枚数（あなたの実装と揃える）
-      let cache = null;
-    
+      // ===== 基本要素 =====
       const grid = document.getElementById('grid-images');
       const sentinel = document.getElementById('sentinel');
+      if (!grid || !sentinel) return;
     
-      // スクロールしている要素を自動判定（window か #panel-images か）
+      // 既にある枚数（SSR初期表示ぶん）
+      let index = grid.querySelectorAll('.card').length;
+    
+      // 1回に追加する枚数／分割挿入
+      const BATCH = 60;
+      const CHUNK = 20;
+    
+      // スクロールルート（タブ内スクロールにも対応）
       const scrollRoot = (() => {
         const panel = document.getElementById('panel-images');
         if (!panel) return null;
         const cs = getComputedStyle(panel);
-        const isScrollable = /(auto|scroll)/.test(cs.overflowY) && panel.scrollHeight > panel.clientHeight;
-        return isScrollable ? panel : null; // nullならviewport(window)
+        return /(auto|scroll)/.test(cs.overflowY) && panel.scrollHeight > panel.clientHeight ? panel : null;
       })();
+      const onScrollTarget = scrollRoot || window;
     
+      // CSS変数からギャップ／最小幅を読む（なければ既定値）
+      function cssNum(varName, fallback){
+        const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(varName));
+        return Number.isFinite(v) ? v : fallback;
+      }
+      function gaps(){
+        return { gx: cssNum('--gx', 12), gy: cssNum('--gy', 10) };
+      }
+      function minThumb(){
+        // スマホ用に @media 側で --min-thumb を切り替えておくと自動で効きます
+        return cssNum('--min-thumb', 236);
+      }
+    
+      // 残りスクロール量（下端まで）
       function bottomGap(){
         if (scrollRoot){
           return scrollRoot.scrollHeight - scrollRoot.clientHeight - scrollRoot.scrollTop;
@@ -154,94 +160,172 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
         return doc.scrollHeight - innerHeight - scrollY;
       }
     
-      function needMore(){
-        const haveMore = index < ((cache && Array.isArray(cache)) ? cache.length : Infinity);
-        return haveMore && bottomGap() < 1200;
+      // ===== 列計算＆配置（厳密Greedy） =====
+      let COLS = 0;
+      let COL_W = 0;
+      let COL_X = [];          // 各列のx座標
+      let H = [];              // 各列の累積高さ
+    
+      function computeCols(containerW){
+        const { gx } = gaps();
+        // 最小幅＋ギャップで列数を決定
+        const cols = Math.max(1, Math.floor((containerW + gx) / (minThumb() + gx)));
+        return cols;
       }
     
+      function recalcColumns(){
+        const W = grid.clientWidth;
+        const { gx } = gaps();
+        const cols = computeCols(W);
+        const W_eff = Math.max(0, W - gx*(cols-1));
+        const colW = W_eff / Math.max(1, cols);
+    
+        const changed = (cols !== COLS) || Math.abs(colW - COL_W) > 0.5;
+        COLS = cols;
+        COL_W = colW;
+        COL_X = Array.from({length: COLS}, (_,i) => Math.round(i*(COL_W + gx)));
+        // Hは再配置の前にリセットする
+        H = Array.from({length: COLS}, () => 0);
+        return changed;
+      }
+    
+      function placeOne(card){
+        const { gy } = gaps();
+        // 比率は data-w/h または naturalWidth/Height から
+        const img = card.querySelector('img');
+        const w = parseFloat(card.dataset.w) || (img && img.naturalWidth)  || COL_W;
+        const h = parseFloat(card.dataset.h) || (img && img.naturalHeight) || COL_W;
+        const ratio = h / Math.max(1, w);
+        const ch = Math.round(COL_W * ratio);
+    
+        // いちばん低い列を探す
+        let k = 0, minH = H[0];
+        for (let i=1; i<COLS; i++){ if (H[i] < minH){ k = i; minH = H[i]; } }
+    
+        // 座標を適用
+        const x = COL_X[k];
+        const y = Math.round(minH);
+        const s = card.style;
+        s.position = 'absolute';
+        s.width = `${COL_W}px`;
+        s.transform = `translate(${x}px, ${y}px)`;
+    
+        H[k] = y + ch + gy;
+        return H[k];
+      }
+    
+      function layoutAll(){
+        const cards = grid.querySelectorAll('.card');
+        const { gy } = gaps();
+        H = Array.from({length: COLS}, () => 0);
+        let maxH = 0;
+        for (const card of cards){ maxH = Math.max(maxH, placeOne(card)); }
+        grid.style.position = 'relative';
+        grid.style.height = `${Math.max(0, Math.round(maxH - gy))}px`;
+      }
+    
+      // 初期レイアウト
+      recalcColumns();
+      layoutAll();
+    
+      // 画像がロードされたら微補正（naturalWidthが入るため）
+      grid.addEventListener('load', (e) => {
+        const t = e.target;
+        if (t && t.tagName === 'IMG') layoutAll();
+      }, true);
+    
+      // リサイズ追従（スロットル）
+      let rT;
+      const ro = new ResizeObserver(() => {
+        clearTimeout(rT);
+        rT = setTimeout(() => { recalcColumns(); layoutAll(); }, 50);
+      });
+      ro.observe(grid);
+    
+      // ===== 画像インデックス（軽量） =====
+      let cache = null; // [{src,w,h,tags?}, ...]
       async function loadIndex(){
         if (cache) return cache;
         try{
-          log('[index] fetching /images-index.json ...');
-          const res = await fetch('/images-index.json', { cache: 'no-store' });
-          cache = await res.json();
-          log('[index] loaded entries =', Array.isArray(cache) ? cache.length : '(not array)');
-        }catch(e){
-          err('[index] fetch failed', e);
-          cache = [];
-        }
+          const res = await fetch('/images-index.json', { cache:'no-store' });
+          const arr = await res.json();
+          cache = Array.isArray(arr) ? arr : [];
+        }catch{ cache = []; }
         return cache;
       }
     
+      // ===== 追加（増分Greedy：DOMに入れつつ即配置） =====
       function appendItems(items){
-        if(!Array.isArray(items) || items.length===0) return;
-        const frag = document.createDocumentFragment();
+        if (!items || !items.length) return;
+        let maxH = Math.max(0, ...H);
+    
         for(const it of items){
           const card = document.createElement('div');
           card.className = 'card';
           if (it.w) card.dataset.w = String(it.w);
           if (it.h) card.dataset.h = String(it.h);
           if (Array.isArray(it.tags)) card.dataset.tags = it.tags.join(',');
+    
           const img = document.createElement('img');
           img.className = 'img';
           img.loading = 'lazy';
           img.decoding = 'async';
           if (it.w) img.width = it.w;
           if (it.h) img.height = it.h;
-          img.src = it.src;  // images-index.json の src を使用
+          img.src = it.src;
           img.alt = '';
+    
           card.appendChild(img);
-          frag.appendChild(card);
+          grid.appendChild(card);              // まずDOMに入れる
+          maxH = Math.max(maxH, placeOne(card)); // 即座に座標適用
         }
-        grid.appendChild(frag); // ← センチネルはgridの外なので常にappendでOK
+    
+        const { gy } = gaps();
+        grid.style.height = `${Math.max(0, Math.round(maxH - gy))}px`;
       }
     
       async function loadMore(){
         const idx = await loadIndex();
-        const total = Array.isArray(idx) ? idx.length : 0;
-        log('[more] before index =', index, 'total =', total, 'bottomGap =', bottomGap());
-        if (!Array.isArray(idx) || index >= total) {
-          log('[more] stop: no more data');
-          return;
-        }
-        const next = idx.slice(index, index + BATCH);
-        index += next.length;
-        appendItems(next);
-        log('[more] appended =', next.length, 'after index =', index,
-            'cardsInDOM =', document.querySelectorAll('#grid-images .card').length);
-        try{ window.GREEDY?.images?.apply?.(); }catch(e){ warn('[more] GREEDY.apply failed', e); }
+        if (index >= idx.length) return;
+        const end = Math.min(index + BATCH, idx.length);
+    
+        const enqueue = (fn) =>
+          ('requestIdleCallback' in window)
+            ? requestIdleCallback(fn, { timeout: 120 })
+            : requestAnimationFrame(fn);
+    
+        let start = index;
+        const step = () => {
+          if (start >= end) return;
+          const nextEnd = Math.min(start + CHUNK, end);
+          appendItems(idx.slice(start, nextEnd));
+          start = nextEnd;
+          index = nextEnd;
+          enqueue(step);
+        };
+        enqueue(step);
       }
     
-      // センチネル自己診断（gridの外にあるはず）
-      log('[sentinel] inGrid =', grid?.contains(sentinel), 'display =', sentinel ? getComputedStyle(sentinel).display : 'N/A');
+      // ===== 無限スクロール（IO + フォールバック） =====
+      function needMore(){
+        const total = cache ? cache.length : Infinity;
+        return index < total && bottomGap() < 1200;
+      }
     
-      // IntersectionObserver（root を scrollRoot に合わせる）
-      if (sentinel && 'IntersectionObserver' in window){
-        let IO_HITS = 0;
+      if ('IntersectionObserver' in window){
         const io = new IntersectionObserver((entries) => {
-          for (const e of entries) {
-            if (e.isIntersecting) {
-              IO_HITS++;
-              log('[io] hit #', IO_HITS);
-              loadMore();
-            }
-          }
-        }, { root: scrollRoot || null, rootMargin: '1500px 0px' });
+          for (const e of entries) if (e.isIntersecting) loadMore();
+        }, { root: scrollRoot || null, rootMargin: '1200px 0px' });
         io.observe(sentinel);
       }
     
-      // スクロール監視は常時ON（IOが沈黙しても拾う）
       let t;
-      (scrollRoot || window).addEventListener('scroll', () => {
+      onScrollTarget.addEventListener('scroll', () => {
         clearTimeout(t);
-        t = setTimeout(() => {
-          const nm = needMore();
-          log('[scroll] needMore =', nm, 'index =', index, 'bottomGap =', bottomGap());
-          if (nm) loadMore();
-        }, 80);
+        t = setTimeout(() => { if (needMore()) loadMore(); }, 80);
       }, { passive: true });
     
-      // 初期にスカスカなら自動で埋める
+      // 初期がスカスカなら自動で埋める
       window.addEventListener('load', () => {
         let loops = 0;
         const fill = () => {
@@ -250,16 +334,10 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
         };
         requestAnimationFrame(fill);
       });
-    
-      // 念のための保険（最大30回/1秒間隔）
-      {
-        let tries = 0;
-        const timer = setInterval(async () => {
-          if (!needMore() || tries++ > 30) { clearInterval(timer); return; }
-          await loadMore();
-        }, 1000);
-      }
     })();
     </script>
+    
+    
+    
     
 </Layout>
