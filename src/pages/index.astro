@@ -90,8 +90,8 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
                 />
               </div>
             ))}
-            <div id="sentinel" aria-hidden="true"></div>
-          </div>
+            </div>
+          <div id="sentinel" aria-hidden="true" style="height:1px"></div>
         </section>
         <section id="panel-works" class="panel works" aria-label="works">
           <div id="grid-works" class="grid">
@@ -116,107 +116,63 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
     </div>
   </main>
   <script is:inline>
-    {`
+    // ===== debug logger（1つだけでOK） =====
+    window.__DBG = true; // falseにすると静かになります
+    const log  = (...a) => { if (window.__DBG) console.log(...a); };
+    const warn = (...a) => { if (window.__DBG) console.warn(...a); };
+    const err  = (...a) => console.error(...a);
+    
+    window.addEventListener('error', e => err('[error]', e.message, e.filename, e.lineno));
+    window.addEventListener('unhandledrejection', e => err('[promise]', e.reason));
+    
+    // 起動確認
+    log('[boot] gallery inline script running');
+    
+    // ===== ここから本体 =====
     (() => {
-      const BATCH = ${'${BATCH}'};
-      const INITIAL_COUNT = ${'${INITIAL_COUNT}'};
-      let index = INITIAL_COUNT;
-      let cache = null; // lazy load client index
-
-      function setupGreedy(grid){
-        if(!grid) return null;
-        const styles = () => getComputedStyle(document.documentElement);
-        const getGaps = () => {
-          const r = styles();
-          return { gx: parseFloat(r.getPropertyValue('--gx'))||0, gy: parseFloat(r.getPropertyValue('--gy'))||0 };
-        };
-        const getCols = () => {
-          const cs = getComputedStyle(grid);
-          // Prefer multicol metrics
-          const cc = parseInt(cs.columnCount);
-          if(!Number.isNaN(cc) && cc > 0) return cc;
-          const cw = parseFloat(cs.columnWidth);
-          if(Number.isFinite(cw) && cw > 0){
-            const { gx } = getGaps();
-            return Math.max(1, Math.floor((grid.clientWidth + gx) / (cw + gx)));
-          }
-          // Fallback to grid-template-columns count if present
-          const tpl = (cs.gridTemplateColumns || '').trim();
-          if(!tpl) return 1;
-          return Math.max(1, tpl.split(' ').length || 1);
-        };
-        const metaH = () => parseFloat(styles().getPropertyValue('--meta-h')) || 0;
-
-        const ALL = Array.from(grid.children);
-        let current = ALL.slice();
-
-        const relayout = (items) => {
-          const { gx, gy } = getGaps();
-          const cols = getCols();
-          // Determine column width for estimation
-          const cs = getComputedStyle(grid);
-          let colW = parseFloat(cs.columnWidth);
-          if(!(Number.isFinite(colW) && colW > 0)){
-            const W = grid.clientWidth - gx * (cols - 1);
-            colW = W / Math.max(1, cols);
-          }
-
-          const colHeights = new Array(cols).fill(0);
-          const buckets = Array.from({ length: cols }, () => []);
-
-          for (const el of items){
-            const w = +el.dataset.w || 1;
-            const h = +el.dataset.h || 1;
-            const est = (h / w) * colW + metaH();
-            let k = 0, minV = colHeights[0];
-            for(let i=1;i<cols;i++){ if(colHeights[i] < minV){ k=i; minV=colHeights[i]; } }
-            buckets[k].push(el);
-            colHeights[k] = minV + est + gy;
-          }
-
-          const frag = document.createDocumentFragment();
-          for(let c=0;c<cols;c++) for(const el of buckets[c]) frag.appendChild(el);
-          grid.appendChild(frag);
-        };
-
-        const api = {
-          filter(tag){ if(!tag){ current=ALL.slice(); return api; } current = ALL.filter(el => (el.dataset.tags||'').split(',').includes(tag)); return api; },
-          random(){ const a=current.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } current=a; return api; },
-          sortByNewest(){ return api; },
-          apply(){
-            // 追加要素も含めて全面再レイアウト
-            const items = Array.from(grid.children).filter(el => el.classList?.contains('card'));
-            relayout(items);
-            // レイアウト後にセンチネルを末尾へ移動
-            const sentinel = document.getElementById('sentinel');
-            if (sentinel && sentinel.parentElement === grid) grid.appendChild(sentinel);
-            return api;
-          },
-          reset(){ current = ALL.slice(); return api; }
-        };
-
-        const doLayout = () => api.apply();
-        window.addEventListener('load', doLayout);
-        new ResizeObserver(() => {
-          clearTimeout(grid.__greedy_t);
-          grid.__greedy_t = setTimeout(doLayout, 60);
-        }).observe(grid);
-        return api;
+      const BATCH = 60;                 // 1回に追加する枚数（あなたの設定に合わせてOK）
+      let index = window.INITIAL_COUNT || 120; // 初期表示枚数（あなたの実装と揃える）
+      let cache = null;
+    
+      const grid = document.getElementById('grid-images');
+      const sentinel = document.getElementById('sentinel');
+    
+      // スクロールしている要素を自動判定（window か #panel-images か）
+      const scrollRoot = (() => {
+        const panel = document.getElementById('panel-images');
+        if (!panel) return null;
+        const cs = getComputedStyle(panel);
+        const isScrollable = /(auto|scroll)/.test(cs.overflowY) && panel.scrollHeight > panel.clientHeight;
+        return isScrollable ? panel : null; // nullならviewport(window)
+      })();
+    
+      function bottomGap(){
+        if (scrollRoot){
+          return scrollRoot.scrollHeight - scrollRoot.clientHeight - scrollRoot.scrollTop;
+        }
+        const doc = document.documentElement;
+        return doc.scrollHeight - innerHeight - scrollY;
       }
-
-      const grid = document.querySelector('#grid-images') || document.querySelector('.img-grid');
-      const apiImages = setupGreedy(grid);
-      window.GREEDY = { images: apiImages };
-
+    
+      function needMore(){
+        const haveMore = index < ((cache && Array.isArray(cache)) ? cache.length : Infinity);
+        return haveMore && bottomGap() < 1200;
+      }
+    
       async function loadIndex(){
         if (cache) return cache;
         try{
+          log('[index] fetching /images-index.json ...');
           const res = await fetch('/images-index.json', { cache: 'no-store' });
           cache = await res.json();
-        }catch(e){ cache = []; }
+          log('[index] loaded entries =', Array.isArray(cache) ? cache.length : '(not array)');
+        }catch(e){
+          err('[index] fetch failed', e);
+          cache = [];
+        }
         return cache;
       }
-
+    
       function appendItems(items){
         if(!Array.isArray(items) || items.length===0) return;
         const frag = document.createDocumentFragment();
@@ -232,50 +188,78 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
           img.decoding = 'async';
           if (it.w) img.width = it.w;
           if (it.h) img.height = it.h;
-          img.src = it.src;
+          img.src = it.src;  // images-index.json の src を使用
           img.alt = '';
           card.appendChild(img);
           frag.appendChild(card);
         }
-        const sentinel = document.getElementById('sentinel');
-        if (sentinel && sentinel.parentElement === grid) {
-          // センチネルの直前に挿入して、常に末尾にセンチネルが来るようにする
-          grid.insertBefore(frag, sentinel);
-        } else {
-          grid.appendChild(frag);
-        }
-        // 追記後レイアウト更新
-        try{ window.GREEDY?.images?.apply(); }catch{}
+        grid.appendChild(frag); // ← センチネルはgridの外なので常にappendでOK
       }
-
+    
       async function loadMore(){
         const idx = await loadIndex();
-        if (!Array.isArray(idx) || index >= idx.length) return;
+        const total = Array.isArray(idx) ? idx.length : 0;
+        log('[more] before index =', index, 'total =', total, 'bottomGap =', bottomGap());
+        if (!Array.isArray(idx) || index >= total) {
+          log('[more] stop: no more data');
+          return;
+        }
         const next = idx.slice(index, index + BATCH);
         index += next.length;
         appendItems(next);
+        log('[more] appended =', next.length, 'after index =', index,
+            'cardsInDOM =', document.querySelectorAll('#grid-images .card').length);
+        try{ window.GREEDY?.images?.apply?.(); }catch(e){ warn('[more] GREEDY.apply failed', e); }
       }
-
-      // IntersectionObserver で無限スクロール
-      const sentinel = document.getElementById('sentinel');
+    
+      // センチネル自己診断（gridの外にあるはず）
+      log('[sentinel] inGrid =', grid?.contains(sentinel), 'display =', sentinel ? getComputedStyle(sentinel).display : 'N/A');
+    
+      // IntersectionObserver（root を scrollRoot に合わせる）
       if (sentinel && 'IntersectionObserver' in window){
+        let IO_HITS = 0;
         const io = new IntersectionObserver((entries) => {
-          for(const e of entries){
-            if(e.isIntersecting){ loadMore(); }
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              IO_HITS++;
+              log('[io] hit #', IO_HITS);
+              loadMore();
+            }
           }
-        }, { rootMargin: '1000px 0px' });
+        }, { root: scrollRoot || null, rootMargin: '1500px 0px' });
         io.observe(sentinel);
-      } else {
-        // フォールバック: スクロール末尾近くでロード
-        let t;
-        window.addEventListener('scroll', () => {
-          clearTimeout(t);
-          t = setTimeout(() => {
-            if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 1200)) loadMore();
-          }, 100);
-        }, { passive: true });
+      }
+    
+      // スクロール監視は常時ON（IOが沈黙しても拾う）
+      let t;
+      (scrollRoot || window).addEventListener('scroll', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          const nm = needMore();
+          log('[scroll] needMore =', nm, 'index =', index, 'bottomGap =', bottomGap());
+          if (nm) loadMore();
+        }, 80);
+      }, { passive: true });
+    
+      // 初期にスカスカなら自動で埋める
+      window.addEventListener('load', () => {
+        let loops = 0;
+        const fill = () => {
+          if (loops++ > 20 || !needMore()) return;
+          loadMore().then(() => requestAnimationFrame(fill));
+        };
+        requestAnimationFrame(fill);
+      });
+    
+      // 念のための保険（最大30回/1秒間隔）
+      {
+        let tries = 0;
+        const timer = setInterval(async () => {
+          if (!needMore() || tries++ > 30) { clearInterval(timer); return; }
+          await loadMore();
+        }, 1000);
       }
     })();
-    `}
-  </script>
+    </script>
+    
 </Layout>
