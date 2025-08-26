@@ -8,6 +8,16 @@
   --bg:#111; --fg:#eee; --card:#181818; --muted:#aaa;
   --min-thumb:236px; --gap-lg:16px;
 }
+@media (max-width: 772px){
+  :root{
+    --min-thumb: 200px;
+  }
+}
+@media (max-width: 450px){
+  :root{
+    --min-thumb: 150px;
+  }
+}
 
 body{ margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--fg); }
 
@@ -47,21 +57,22 @@ body{ margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:
 .name{ font-weight:600; }
 .sub{ color: var(--muted); font-size: 0.9rem; }
 
-/* images grid: multicol masonry */
+/* images grid: JS絶対配置のマス目 */
 .img-grid{
-  column-width: var(--min-thumb);
-  column-gap: var(--gx);
+  position: relative; /* 子の絶対配置の基準 */
 }
 .img-grid .card{
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  margin-bottom: var(--gy);
-  display:block;
+  position: absolute;
+  top: 0; left: 0;
+  /* transform で配置するので margin は不要 */
+  margin: 0;
+  display: block;
 }
 .img-grid .img{
-  width:100%; height:auto; display:block;
+  width: 100%; height: auto; display: block;
   background:#222; object-fit: cover;
 }
+
 
 /* tabs */
 .tabwrap{ margin-top: 16px; }
