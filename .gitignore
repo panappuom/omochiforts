@@ -24,7 +24,7 @@ pnpm-debug.log*
 .idea/
 
 # build-images の生成物
-public/**
+public/assets/**
 !public/favicon.png
 
 # - 正本出力: src/assets/
