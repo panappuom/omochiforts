@@ -16,14 +16,7 @@
   "layout": {
     "gap": { "sp": { "x": 4, "y": 4 }, "pc": { "x": 16, "y": 16 } },
     "tabs": { "align": "center" },
-    "breakpoint": "521px",
-    "grid": {
-      "base": 2,
-      "bp": [
-        { "min": "521px",  "cols": 3 },
-        { "min": "1024px", "cols": 5 }
-      ]
-    }
+    "breakpoint": "521px"
   },
   "gallery": {
     "insertAdEvery": 20,

@@ -33,16 +33,6 @@ import "../styles/global.css";
         :root{ --gx: var(--gx-pc); --gy: var(--gy-pc); }
       }
     `} />
-    {(() => {
-      const grid = (cfg as any)?.layout?.grid ?? { base: 2, bp: [{ min: '768px', cols: 3 }, { min: '1024px', cols: 5 }] };
-      const base = Number(grid.base) || 2;
-      const bps = Array.isArray(grid.bp) ? grid.bp : [];
-      const rules = [
-        `.grid{ grid-template-columns: repeat(${base}, minmax(0,1fr)); }`,
-        ...bps.map((it: any) => `@media (min-width: ${it.min}){ .grid{ grid-template-columns: repeat(${Number(it.cols) || base}, minmax(0,1fr)); } }`)
-      ].join('\n');
-      return (<style is:global set:html={rules} />);
-    })()}
   </head>
   <body>
     <slot />
