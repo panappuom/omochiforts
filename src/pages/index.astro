@@ -95,21 +95,7 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
         </section>
         <section id="panel-works" class="panel works" aria-label="works">
           <div id="grid-works" class="grid">
-            {cards.map((c:any) => (
-              <a class="card" href={`/work/${c.slug}/`} aria-label={`${c.title} を開く`} data-w="1" data-h="1" data-tags={(((sets as any)[c.slug]?.tags) ?? []).join(',')}>
-                <div class="thumb">
-                  {c.coverSrc ? (
-                    <img src={c.coverSrc} alt={c.title} loading="lazy" decoding="async" />
-                  ) : (
-                    <div class="ph" aria-hidden="true"></div>
-                  )}
-                </div>
-                <div class="meta">
-                  <div class="name">{c.title}</div>
-                  <div class="sub">{c.count} 枚</div>
-                </div>
-              </a>
-            ))}
+            {/* TODO: 作品タブ（works）のUIをここに実装します。現在はスケルトンのみ。 */}
           </div>
         </section>
       </div>
