@@ -1,13 +1,12 @@
 // scripts/build-images.mjs
-// おもち要塞：画像ビルド & インデックス生成（AVIF/WebP, s/s2x/l/l2x, LQIP, publicミラー）
+// おもち要塞：画像ビルド & インデックス生成（AVIF/WebP, s/s2x/l/l2x, LQIP）
 //
 // 依存: sharp, fast-glob, ulid
 //   npm i -D sharp fast-glob ulid
 //
 // 仕様ポイント:
 // - 入力: originalsDir（既定 originals/originals_upscaled、無ければ originals → src/originals）配下の .jpg/.jpeg/.png/.webp/.avif
-// - 出力: src/assets/{s,s2x,l,l2x}/{id}.{avif,webp}   ← “正”の出力
-// - ミラー: public/assets に差分同期（URLは常に /assets/... を書く）
+// - 出力: public/assets/{s,s2x,l,l2x}/{id}.{avif,webp}   ← 単一ディレクトリに出力
 // - images.json: src/data/images.json を唯一のメタ“真実”とする。既存レコードは人手項目(title/alt/tags等)を温存マージ
 // - id: 既存があれば継承。無ければ「ファイル名がULIDなら採用」or「createdAtベースでULID生成」
 // - createdAt: 既存なければ fs.stat.mtime を初期値（後で手修正OK）
@@ -29,8 +28,7 @@ const cfg = require('../src/config/site.config.json');
 
 // ===== 設定 =====
 const IM = cfg.images ?? {};
-const OUT_BASE  = IM.outputDir  ?? 'src/assets';
-const PUB_BASE  = IM.publicDir  ?? 'public/assets';
+const OUT_BASE  = IM.outputDir  ?? 'public/assets';
 const INDEX_JSON = 'src/data/images.json';
 const CLEAN_OUTPUTS = !!(IM.cleanOutputs ?? false);
 
@@ -72,7 +70,7 @@ const ORIGINALS = resolveExisting(IM.originalsDir ?? 'originals/originals_upscal
 console.log("Effective Config (images):", JSON.stringify({
   originalsDir: ORIGINALS,
   outputDir: OUT_BASE,
-  publicDir: PUB_BASE,
+  publicDir: OUT_BASE, // unified
   smallWidth: W_S,
   small2x: W_S2,
   largeWidth: W_L,
@@ -101,7 +99,7 @@ const fileStem = (p) => path.basename(p, path.extname(p)).replace(/\s+/g, '_');
 const ms = (t)=> (t>=1000 ? `${(t/1000).toFixed(1)}s` : `${t}ms`);
 const ensureDir = (p)=> fs.mkdirSync(p, { recursive: true });
 const posix = (p)=> p.split(path.sep).join('/');
-const urlFromPub = (abs) => '/' + path.posix.join('assets', posix(path.relative(PUB_BASE, abs)));
+const urlFromPub = (abs) => '/' + path.posix.join('assets', posix(path.relative(OUT_BASE, abs)));
 
 async function getMeta(inPath) {
   try { return await sharp(inPath).rotate().metadata(); }
@@ -122,36 +120,7 @@ async function needBuild(src, dst) {
     return ss.mtimeMs > ds.mtimeMs + 1;
   } catch { return true; }
 }
-function walkFiles(dir) {
-  return fs.readdirSync(dir, { withFileTypes:true }).flatMap(d => {
-    const p = path.join(dir, d.name);
-    return d.isDirectory() ? walkFiles(p) : [p];
-  });
-}
-async function mirrorDir(srcDir, dstDir) {
-  // 単一ディレクトリ運用（同一パス）の場合は何もしない
-  if (path.resolve(srcDir) === path.resolve(dstDir)) return;
-  ensureDir(dstDir);
-  // copy/update
-  for (const s of walkFiles(srcDir)) {
-    const rel = path.relative(srcDir, s);
-    const d = path.join(dstDir, rel);
-    ensureDir(path.dirname(d));
-    let copy = true;
-    try {
-      const ss = fs.statSync(s);
-      const ds = fs.statSync(d);
-      copy = ss.size !== ds.size || ss.mtimeMs > ds.mtimeMs + 1;
-    } catch {}
-    if (copy) fs.copyFileSync(s, d);
-  }
-  // remove stale
-  for (const d of walkFiles(dstDir)) {
-    const rel = path.relative(dstDir, d);
-    const s = path.join(srcDir, rel);
-    if (!fs.existsSync(s)) fs.rmSync(d, { force:true });
-  }
-}
+// 旧 mirrorDir は不要（単一ディレクトリ出力のため削除）
 
 // ===== 既存 index 読み込み（人手項目を保護） =====
 let prev = [];
@@ -236,15 +205,12 @@ for (const rel of inputs) {
   await buildOne(W_L,  outPaths.l,  Q_L);
   await buildOne(W_L2, outPaths.l2x, Q_L);
 
-  // public/assets にミラー（差分）
-  await mirrorDir(OUT_BASE, PUB_BASE);
-
   // URL化（/assets/...）
   const urls = {
-    s:   Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(PUB_BASE, 's',   `${id}.${f}`))])),
-    s2x: Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(PUB_BASE, 's2x', `${id}.${f}`))])),
-    l:   Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(PUB_BASE, 'l',   `${id}.${f}`))])),
-    l2x: Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(PUB_BASE, 'l2x', `${id}.${f}`))])),
+    s:   Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 's',   `${id}.${f}`))])),
+    s2x: Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 's2x', `${id}.${f}`))])),
+    l:   Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 'l',   `${id}.${f}`))])),
+    l2x: Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 'l2x', `${id}.${f}`))])),
   };
 
   // LQIP
@@ -305,14 +271,12 @@ if (CLEAN_OUTPUTS) {
       }
     } catch {}
   }
-  // クリーン後に public を再ミラー
-  await mirrorDir(OUT_BASE, PUB_BASE);
 }
 
 // 追加: クライアント用の軽量インデックスを public/images-index.json に出力（新着順）
 try {
-  const PUB_ROOT = path.dirname(PUB_BASE);
-  ensureDir(PUB_ROOT);
+  const OUT_ROOT = path.dirname(OUT_BASE);
+  ensureDir(OUT_ROOT);
   const slim = outIndex
     .slice()
     .sort((a,b)=>{
@@ -326,12 +290,12 @@ try {
       w: r.w, h: r.h,
       tags: Array.isArray(r.tags) ? r.tags : []
     }));
-  fs.writeFileSync(path.join(PUB_ROOT, 'images-index.json'), JSON.stringify(slim), 'utf-8');
+  fs.writeFileSync(path.join(OUT_ROOT, 'images-index.json'), JSON.stringify(slim), 'utf-8');
 } catch (e) {
   console.warn('Warn: failed to write public/images-index.json', e);
 }
 
 // まとめ
 console.log(`\n✓ images.json written (${outIndex.length} items)`);
-console.log(`✓ outputs: ${OUT_BASE}  → mirrored →  ${PUB_BASE}`);
+console.log(`✓ outputs: ${OUT_BASE}`);
 console.log(`✓ made=${made}, skipped=${skipped}, time=${ms(Date.now()-t0)}\n`);
