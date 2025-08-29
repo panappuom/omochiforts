@@ -101,5 +101,13 @@ import "../styles/global.css";
   </head>
   <body>
     <slot />
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
+    
   </body>
 </html>
