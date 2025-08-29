@@ -1,6 +1,6 @@
 ---
 import cfg from "../config/site.config.json";
-
+const { title = "おもち要塞 / OmochiForts" } = Astro.props;
 // gap/BPをconfigから
 const gap = cfg?.layout?.gap ?? {};
 const spx = ((gap.sp?.x) ?? 4) + "px";
@@ -11,12 +11,13 @@ const bp  = cfg?.layout?.breakpoint ?? "521px";
 
 // CSSはAstroのimportで読み込む（/srcを<link>しない）
 import "../styles/global.css";
+
 ---
 
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>おもち要塞</title>
+    <title>{title}</title>
 
     <!-- favicons -->
     <!-- 基本 favicon -->
@@ -65,7 +66,7 @@ import "../styles/global.css";
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png">
 
     <meta name="apple-mobile-web-app-title" content="おもち要塞" />
-    
+
     <!-- PWA / Safari pinned tab -->
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#625F59">
