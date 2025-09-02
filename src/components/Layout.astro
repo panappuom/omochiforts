@@ -1,5 +1,6 @@
 ---
 import cfg from "../config/site.config.json";
+import "../styles/peek.css";
 const { title = "おもち要塞 / OmochiForts" } = Astro.props;
 // gap/BPをconfigから
 const gap = cfg?.layout?.gap ?? {};
@@ -112,6 +113,7 @@ import "../styles/global.css";
         });
       }
     </script>
+    <script type="module" src="/src/scripts/peek.js"></script>
     
   </body>
 </html>

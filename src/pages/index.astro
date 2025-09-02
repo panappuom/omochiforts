@@ -40,6 +40,33 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
       </div>
       <div class="panels">
         <section id="panel-images" class="panel images" aria-label="images">
+          <!-- ★テスト用：まずは1枚だけ。既存ギャラリーはこの下にそのまま残してOK -->
+<div class="card-wrap" data-peek="right"
+style="--peek-w:110px; --peek-h:110px; --emo-x:16px; --emo-y:-4px; --emo-w:28px; --emo-h:28px;">
+<a class="card" href="/work/xxx/">
+<img src="/assets/s/01K3FSMVF5GRTJ3R6B6AZFCBJ9.avif" alt="作品名" loading="lazy" decoding="async" />
+</a>
+
+<!-- カードの後ろ側に潜む体 -->
+<img class="peek-body" src="/img/peek/body.webp" alt="" aria-hidden="true" />
+<!-- カードより前に被せる手 -->
+<img class="peek-hand" src="/img/peek/hand.webp" alt="" aria-hidden="true" />
+
+<!-- 目（開閉差し替えで瞬き） -->
+<img class="peek-eye"
+  src="/img/peek/eye_open.webp"
+  data-open="/img/peek/eye_open.webp"
+  data-close="/img/peek/eye_close.webp"
+  alt="" aria-hidden="true" />
+
+<!-- クリック判定（手のあたり） -->
+<button class="peek-hit" type="button" aria-label="キャラを引っ込める"></button>
+</div>
+
+
+
+
+
           {/* Greedy用: data-w/h/tags を付与し、カード要素に統一 */}
           <div id="grid-images" class="img-grid" role="list">
             {initialImages.map((it:any) => (

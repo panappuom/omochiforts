@@ -1,0 +1,76 @@
+.card-wrap{
+    position: relative;
+    isolation: isolate; /* 同一カード内のz-indexを独立 */
+  }
+  
+  /* カード本体は常に手前（体を隠す役） */
+  .card{
+    position: relative;
+    z-index: 1;
+    display: block;
+    border-radius: 12px;
+    overflow: hidden; /* 任意 */
+  }
+  
+  /* 共通：体/手の見た目サイズ・初期配置（カード外から） */
+  .peek-body,
+  .peek-hand{
+    position: absolute;
+    top: 50%;
+    width: var(--peek-w, 100px);
+    height: var(--peek-h, 100px);
+    transform: translate(60%, -50%); /* 右からの初期：オフスクリーン */
+    transition: transform .25s cubic-bezier(.2,.7,.2,1);
+    will-change: transform;
+    pointer-events: none;
+  }
+  
+  /* 右から出る */
+  .card-wrap[data-peek="right"] .peek-body,
+  .card-wrap[data-peek="right"] .peek-hand{ right: -8px; }
+  .card-wrap.is-peeking[data-peek="right"] .peek-body,
+  .card-wrap.is-peeking[data-peek="right"] .peek-hand{ transform: translate(0, -50%); }
+  
+  /* 左から出る */
+  .card-wrap[data-peek="left"] .peek-body,
+  .card-wrap[data-peek="left"] .peek-hand{
+    left: -8px; transform: translate(-60%, -50%);
+  }
+  .card-wrap.is-peeking[data-peek="left"] .peek-body,
+  .card-wrap.is-peeking[data-peek="left"] .peek-hand{
+    transform: translate(0, -50%);
+  }
+  
+  /* レイヤ順：体=奥(0)／目=中(2)／手=前(3) */
+  .peek-body{ z-index: 0; }
+  .peek-eye { z-index: 2; }
+  .peek-hand{ z-index: 3; }
+  
+  /* 目：最小切り抜き。カード右端基準で座標指定 */
+  .peek-eye{
+    position: absolute;
+    right: var(--emo-x, 0px);
+    top: calc(50% + var(--emo-y, 0px));
+    transform: translateY(-50%);
+    width: var(--emo-w, 28px);
+    height: var(--emo-h, 28px);
+    image-rendering: auto;
+    pointer-events: none;
+  }
+  
+  /* クリック当たり判定（手の付近） */
+  .peek-hit{
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 0; /* left側から出す時はJSが自動でleftに寄せる */
+    width: 64px; height: 64px;
+    border: 0; background: transparent; cursor: pointer;
+    z-index: 4;
+  }
+  
+  /* 省エネ */
+  @media (prefers-reduced-motion: reduce){
+    .peek-body, .peek-hand{ transition: none; }
+  }
+  
