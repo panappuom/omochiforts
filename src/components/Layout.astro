@@ -106,13 +106,15 @@ import "../styles/global.css";
   </head>
   <body>
     <slot />
-    <script>
-      if ('serviceWorker' in navigator) {
+    <script is:inline>
+      // 本番ビルド時だけ Service Worker を登録する
+      if ('serviceWorker' in navigator && import.meta.env.PROD) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js');
         });
       }
     </script>
+    
     <script type="module" src="/src/scripts/peek.js"></script>
     
   </body>
