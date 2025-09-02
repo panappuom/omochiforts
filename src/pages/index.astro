@@ -7,41 +7,6 @@ import cfg from "../config/site.config.json";
 // ヘルパ: 小サイズ画像URL優先（avif→webp）
 const imgSmall = (r:any) => r?.sizes?.s?.avif ?? r?.sizes?.s?.webp ?? r?.sizes?.l?.avif ?? r?.sizes?.l?.webp ?? "";
 
-// ヘルパ: 擬似スラッグ（source の先頭トークンをグループキーに）
-const slugOf = (r:any) => {
-  const src = String(r?.source ?? "");
-  if (!src) return "misc";
-  const base = src.split('/').pop() || src;
-  // 例: "A_B_C.png" → "A"
-  return base.split('_')[0] || "misc";
-};
-
-// グループ化して cover を選ぶ（最初の1枚）。存在しないフィールドは使用しない
-const bySlug = new Map<string, any[]>();
-for (const img of images as any[]) {
-  const slug = slugOf(img);
-  if (!bySlug.has(slug)) bySlug.set(slug, []);
-  bySlug.get(slug)!.push(img);
-}
-const cards = [...bySlug.entries()].map(([slug, arr]) => {
-  // 並びは sortKey(desc) → id
-  arr.sort((a:any, b:any) => {
-    const sa = typeof a.sortKey === 'number' ? a.sortKey : Date.parse(a.createdAt || 0);
-    const sb = typeof b.sortKey === 'number' ? b.sortKey : Date.parse(b.createdAt || 0);
-    if (sa !== sb) return sb - sa;
-    return String(a.id).localeCompare(String(b.id));
-  });
-  const cover = arr[0];
-  const meta: any = (sets as any)[slug] || { title: slug, link: "", tags: [] };
-  return {
-    slug,
-    title: meta.title ?? slug,
-    link: meta.link ?? "",
-    count: arr.length,
-    coverSrc: imgSmall(cover),
-  };
-});
-
 // 画像一覧: 新着順（sortKey 降順）→ id
 const imagesSorted = [...(images as any[])].sort((a:any, b:any) => {
   const sa = typeof a.sortKey === 'number' ? a.sortKey : Date.parse(a.createdAt || 0);
