@@ -1,0 +1,50 @@
+peek-agent{ position:relative; isolation:isolate; }
+peek-agent .card{ position:relative; z-index:1; border-radius:12px; overflow:hidden; }
+
+peek-agent .peek-body{ z-index:0; }
+peek-agent .peek-eye { z-index:2; }
+peek-agent .peek-hand{ z-index:3; }
+
+peek-agent .peek-body,
+peek-agent .peek-hand{
+  position:absolute; top:50%;
+  width:var(--peek-w,110px); height:var(--peek-h,110px);
+  will-change:transform; pointer-events:none;
+  transition:transform .25s cubic-bezier(.2,.7,.2,1);
+}
+
+/* 既定＝左から */
+peek-agent .peek-body, peek-agent .peek-hand{ left:-8px; transform:translate(-60%,-50%); }
+peek-agent.is-peeking .peek-body, peek-agent.is-peeking .peek-hand{ transform:translate(0,-50%); }
+
+/* 右 */
+peek-agent[data-peek="right"] .peek-body, peek-agent[data-peek="right"] .peek-hand{ left:auto; right:-8px; transform:translate(60%,-50%); }
+peek-agent[data-peek="right"].is-peeking .peek-body, peek-agent[data-peek="right"].is-peeking .peek-hand{ transform:translate(0,-50%); }
+
+/* 上 */
+peek-agent[data-peek="top"] .peek-body, peek-agent[data-peek="top"] .peek-hand{ left:50%; top:-8px; transform:translate(-50%,-60%); }
+peek-agent[data-peek="top"].is-peeking .peek-body, peek-agent[data-peek="top"].is-peeking .peek-hand{ top:0; transform:translate(-50%,0); }
+
+/* 下 */
+peek-agent[data-peek="bottom"] .peek-body, peek-agent[data-peek="bottom"] .peek-hand{ left:50%; top:auto; bottom:-8px; transform:translate(-50%,60%); }
+peek-agent[data-peek="bottom"].is-peeking .peek-body, peek-agent[data-peek="bottom"].is-peeking .peek-hand{ bottom:0; transform:translate(-50%,0); }
+
+/* 目（最小切り抜き）— 右端基準 & 縦センター基準のオフセット */
+peek-agent .peek-eye{
+  position:absolute;
+  right:var(--emo-x,16px);
+  top:calc(50% + var(--emo-y,-4px));
+  transform:translateY(-50%);
+  width:var(--emo-w,28px); height:var(--emo-h,28px);
+  pointer-events:none;
+}
+
+/* クリック当たり（手の近く） */
+peek-agent .peek-hit{
+  position:absolute; top:50%; right:0; transform:translateY(-50%);
+  width:64px; height:64px; border:0; background:transparent; cursor:pointer; z-index:4;
+}
+
+@media (prefers-reduced-motion: reduce){
+  peek-agent .peek-body, peek-agent .peek-hand{ transition:none; }
+}

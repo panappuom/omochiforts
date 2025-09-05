@@ -1,7 +1,8 @@
 ---
 import cfg from "../config/site.config.json";
-import "../styles/peek.css";
+import agents from "../data/peek-agents.json";
 const { title = "おもち要塞 / OmochiForts" } = Astro.props;
+const agentsJson = JSON.stringify(agents);
 // gap/BPをconfigから
 const gap = cfg?.layout?.gap ?? {};
 const spx = ((gap.sp?.x) ?? 4) + "px";
@@ -74,6 +75,9 @@ import "../styles/global.css";
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#625F59">
     <meta name="theme-color" content="#625F59">
+    
+    <!-- Peek Agent CSS -->
+    <link rel="stylesheet" href="/src/styles/peek-agent.css" />
     <!-- iOS Safari用（古いがまだ必要） -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <!-- Android Chrome用（推奨） -->
@@ -106,6 +110,11 @@ import "../styles/global.css";
   </head>
   <body>
     <slot />
+    
+    <!-- Peek Agent JS -->
+    <script is:inline>{`window.__PEEK = ${agentsJson};`}</script>
+    <script type="module" src="/src/scripts/peek-agent.js"></script>
+    
     <script is:inline>
       // 本番ビルド時だけ Service Worker を登録する
       if ('serviceWorker' in navigator && import.meta.env.PROD) {
@@ -114,8 +123,6 @@ import "../styles/global.css";
         });
       }
     </script>
-    
-    <script type="module" src="/src/scripts/peek.js"></script>
     
   </body>
 </html>

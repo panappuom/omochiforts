@@ -1,0 +1,14 @@
+{
+    "cat001": {
+      "side": "left",
+      "peekW": 110, "peekH": 110,
+      "emoX": 16, "emoY": -4, "emoW": 28, "emoH": 28,
+      "assets": {
+        "body": "/img/peek/body.webp",
+        "hand": "/img/peek/hand.webp",
+        "eyeOpen": "/img/peek/eye_open.webp",
+        "eyeClose": "/img/peek/eye_close.webp"
+      }
+    }
+  }
+  
