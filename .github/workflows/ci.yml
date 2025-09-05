@@ -1,0 +1,27 @@
+name: CI
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+
+      # RSS などのパイプラインが失敗したら CI も失敗させる（Codexの指摘へ対応）
+      # 例：Promise.all にして throw する実装に修正しておく
+      - name: Run pipeline (validate data)
+        run: npm run pipeline
+
+      - name: Build
+        run: npm run build
