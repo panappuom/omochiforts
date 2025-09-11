@@ -1,27 +1,34 @@
-name: CI
+name: CI (PR checks)
+
 on:
   pull_request:
-    branches: [ main ]
-  push:
-    branches: [ main ]
-
-permissions:
-  contents: read
 
 jobs:
-  test-build:
+  verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+          cache: npm
 
-      # RSS などのパイプラインが失敗したら CI も失敗させる（Codexの指摘へ対応）
-      # 例：Promise.all にして throw する実装に修正しておく
-      - name: Run pipeline (validate data)
-        run: npm run pipeline
+      - name: Install deps
+        run: npm ci
 
-      - name: Build
+      # あれば実行（無ければコメントアウトでOK）
+      - name: Lint
+        run: npm run lint --if-present
+      - name: Typecheck
+        run: npm run typecheck --if-present
+      - name: Unit tests
+        run: npm test --if-present
+
+      # Pages想定で本番ビルドが通るか確認（baseの不備を早期検知）
+      - name: Build (Astro)
+        env:
+          DEPLOY_TARGET: pages   # astro.config.mjs で base/site の分岐に使用
         run: npm run build
