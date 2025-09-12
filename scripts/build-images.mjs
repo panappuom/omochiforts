@@ -291,6 +291,8 @@ try {
       src: r?.sizes?.s?.avif ?? r?.sizes?.s?.webp ?? r?.sizes?.l?.avif ?? r?.sizes?.l?.webp ?? '',
       w: r.w, h: r.h,
       tags: Array.isArray(r.tags) ? r.tags : [],
+      hasProducts: !!(r.links && Array.isArray(r.links.products) && r.links.products.length),
+      relatedCount: (r.links && Array.isArray(r.links.related)) ? r.links.related.length : 0,
       sortKey: typeof r.sortKey === 'number' ? r.sortKey : Date.parse(r.createdAt || 0)
     }));
   fs.writeFileSync(path.join(OUT_ROOT, 'images-index.json'), JSON.stringify(slim), 'utf-8');
