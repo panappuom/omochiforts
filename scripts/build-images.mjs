@@ -286,9 +286,12 @@ try {
       return String(a.id).localeCompare(String(b.id));
     })
     .map(r => ({
+      id: r.id,
+      alt: typeof r.alt === 'string' ? r.alt : '',
       src: r?.sizes?.s?.avif ?? r?.sizes?.s?.webp ?? r?.sizes?.l?.avif ?? r?.sizes?.l?.webp ?? '',
       w: r.w, h: r.h,
-      tags: Array.isArray(r.tags) ? r.tags : []
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      sortKey: typeof r.sortKey === 'number' ? r.sortKey : Date.parse(r.createdAt || 0)
     }));
   fs.writeFileSync(path.join(OUT_ROOT, 'images-index.json'), JSON.stringify(slim), 'utf-8');
 } catch (e) {
