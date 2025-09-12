@@ -23,9 +23,7 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# build-images の生成物
-public/assets/**
-!public/favicon.png
+
 
 # - 正本出力: src/assets/
 # - インデックス: src/data/images.json
