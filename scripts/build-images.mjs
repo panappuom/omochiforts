@@ -295,7 +295,12 @@ try {
       relatedCount: (r.links && Array.isArray(r.links.related)) ? r.links.related.length : 0,
       sortKey: typeof r.sortKey === 'number' ? r.sortKey : Date.parse(r.createdAt || 0)
     }));
-  fs.writeFileSync(path.join(OUT_ROOT, 'images-index.json'), JSON.stringify(slim), 'utf-8');
+  const outPath = path.join(OUT_ROOT, 'images-index.json');
+  fs.writeFileSync(outPath, JSON.stringify(slim, null, 2) + '\n', 'utf-8');
+  const emptyAlt = slim.filter(x => !x.alt).length;
+  console.log(`images-index: ${slim.length} items → ${outPath}`);
+  console.log(`images-index: empty alt = ${emptyAlt}`);
+  console.log(`images-index: top =`, slim[0]);
 } catch (e) {
   console.warn('Warn: failed to write public/images-index.json', e);
 }
