@@ -85,3 +85,16 @@ body{ margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:
 .panel{ display:none; }
 #tab-images:checked ~ .panels #panel-images{ display:block; }
 #tab-works:checked  ~ .panels #panel-works{  display:block; }
+
+/* warning banner and icon */
+.notice--warn,
+.status-icon--warn{
+  padding:4px 8px;
+  line-height:1.4;
+  background:#333;
+  color:#ffcc33;
+  border-radius:4px;
+}
+
+.notice--warn{ display:block; }
+.status-icon--warn{ display:inline-block; }
