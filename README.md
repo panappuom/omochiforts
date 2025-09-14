@@ -48,7 +48,7 @@ Feel free to check [our documentation](https://docs.astro.build) or jump into ou
 
 | DEPLOY_TARGET | site | base | robots.txt |
 | --- | --- | --- | --- |
-| `pages` | `https://panappuom.github.io` | `/omochiforts/` | `User-agent: *\nDisallow: /` |
+| `pages` | `https://panappuom.github.io` | `/omochiforts/` | `User-agent: *\nAllow: /` |
 | (未設定/その他) | `https://example.com` | `/` | `User-agent: *\nAllow: /` |
 
 ### GitHub Pages にデプロイする場合
@@ -57,7 +57,7 @@ Feel free to check [our documentation](https://docs.astro.build) or jump into ou
 DEPLOY_TARGET=pages npm run build
 ```
 
-生成された `dist` を GitHub Pages に配置します。Pages 用ビルドではサイトのベースパスがリポジトリ名になり、検索エンジンにインデックスされないよう `robots.txt` が `Disallow: /` を返します。
+生成された `dist` を GitHub Pages に配置します。Pages 用ビルドではサイトのベースパスがリポジトリ名になります。`robots.txt` はリポジトリ配下に配置されるためインデックス制御には使えず、常に `Allow: /` を返します。検索エンジンによるインデックスを防ぎたい場合は、ルートドメインの `robots.txt` やページごとの meta タグを設定してください。
 
 ### 独自ドメインに切り替える場合
 
