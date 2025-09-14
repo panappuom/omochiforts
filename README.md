@@ -41,3 +41,28 @@ All commands are run from the root of the project, from a terminal:
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+
+## デプロイ運用
+
+このプロジェクトは GitHub Pages と独自ドメインの両方で運用できます。ビルド時に `DEPLOY_TARGET` 環境変数を参照して設定を切り替えます。
+
+| DEPLOY_TARGET | site | base | robots.txt |
+| --- | --- | --- | --- |
+| `pages` | `https://panappuom.github.io` | `/omochiforts/` | `User-agent: *\nDisallow: /` |
+| (未設定/その他) | `https://example.com` | `/` | `User-agent: *\nAllow: /` |
+
+### GitHub Pages にデプロイする場合
+
+```bash
+DEPLOY_TARGET=pages npm run build
+```
+
+生成された `dist` を GitHub Pages に配置します。Pages 用ビルドではサイトのベースパスがリポジトリ名になり、検索エンジンにインデックスされないよう `robots.txt` が `Disallow: /` を返します。
+
+### 独自ドメインに切り替える場合
+
+1. `astro.config.mjs` 内の `https://example.com` を実際のドメインに置き換えます。
+2. `DEPLOY_TARGET` を指定せずに `npm run build` します。
+3. 生成された `dist` を任意のホスティングサービスに配置します。`robots.txt` はインデックスを許可します。
+
+`DEPLOY_TARGET` はビルド先の環境を表すための変数で、上記以外の値を指定した場合も独自ドメイン用の挙動になります。
