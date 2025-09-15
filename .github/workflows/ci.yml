@@ -28,7 +28,9 @@ jobs:
         run: npm test --if-present
 
       # Pages想定で本番ビルドが通るか確認（baseの不備を早期検知）
-      - name: Build (Astro)
-        env:
-          DEPLOY_TARGET: pages   # astro.config.mjs で base/site の分岐に使用
-        run: npm run build
+      - name: Build (staging)
+        run: npm run build:staging
+
+      - name: Build (prod)
+        if: vars.ENABLE_PROD_PIPELINE == 'true'
+        run: npm run build:prod
