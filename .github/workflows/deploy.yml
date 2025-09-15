@@ -16,6 +16,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_TARGET: pages
+      PUBLIC_DEPLOY_TARGET: pages
     steps:
       - uses: actions/checkout@v4
 
@@ -27,10 +30,8 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Build (Astro)
-        env:
-          DEPLOY_TARGET: pages   # astro.config.mjs 側で base/site を切替
-        run: npm run build
+      - name: Build (staging)
+        run: npm run build:staging
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -43,9 +44,32 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_TARGET: pages
+      PUBLIC_DEPLOY_TARGET: pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  build-prod:
+    if: vars.ENABLE_PROD_PIPELINE == 'true'
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_TARGET: prod
+      PUBLIC_DEPLOY_TARGET: prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build (prod)
+        run: npm run build:prod
