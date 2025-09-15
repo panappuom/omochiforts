@@ -31,6 +31,14 @@ jobs:
       - name: Build (staging)
         run: npm run build:staging
 
+      - name: Check meta robots (staging)
+        run: |
+          set -e
+          for f in $(find dist -name '*.html'); do
+            grep -q '<meta name="robots" content="noindex, nofollow, noarchive"' "$f"
+            grep -q '<meta name="googlebot" content="noindex, nofollow, noimageindex"' "$f"
+          done
+
       - name: Build (prod)
         if: vars.ENABLE_PROD_PIPELINE == 'true'
         run: npm run build:prod
