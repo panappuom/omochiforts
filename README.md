@@ -59,6 +59,8 @@ DEPLOY_TARGET=pages npm run build
 
 生成された `dist` を GitHub Pages に配置します。Pages 用ビルドではサイトのベースパスがリポジトリ名になります。`robots.txt` はリポジトリ配下に配置されるためインデックス制御には使えず、常に `Allow: /` を返します。検索エンジンによるインデックスを防ぎたい場合は、ルートドメインの `robots.txt` やページごとの meta タグを設定してください。
 
+> **注意**: `robots.txt` は `https://ホスト/robots.txt` のみがクローラーに認識されます。GitHub Pages のようにサブパスに配置された場合は効果がありません。
+
 ### 独自ドメインに切り替える場合
 
 1. `astro.config.mjs` 内の `https://example.com` を実際のドメインに置き換えます。
