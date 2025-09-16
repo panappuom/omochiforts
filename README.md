@@ -51,6 +51,11 @@ Feel free to check [our documentation](https://docs.astro.build) or jump into ou
 | `pages` | `https://panappuom.github.io` | `/omochiforts/` | `User-agent: *\nAllow: /` |
 | (未設定/その他) | `https://example.com` | `/` | `User-agent: *\nAllow: /` |
 
+### canonical と noindex の方針
+
+- `PUBLIC_DEPLOY_TARGET=prod` のビルドでは、各ページの `<head>` に `astro.config.mjs` の `site` 設定とページのパスから生成した `<link rel="canonical">` を挿入します。
+- `PUBLIC_DEPLOY_TARGET=pages` のビルドでは canonical を出力せず、既存の `<meta name="robots" ...>` による noindex 設定で GitHub Pages 側のインデックス制御を行います。
+
 ### GitHub Pages にデプロイする場合
 
 ```bash
