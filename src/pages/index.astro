@@ -4,8 +4,34 @@ import images from "../data/images.json";
 import sets from "../data/sets.json";
 import cfg from "../config/site.config.json";
 
-// ヘルパ: 小サイズ画像URL優先（avif→webp）
-const imgSmall = (r:any) => r?.sizes?.s?.avif ?? r?.sizes?.s?.webp ?? r?.sizes?.l?.avif ?? r?.sizes?.l?.webp ?? "";
+// ヘルパ: カバーメタ（小サイズ優先でURL・w/hを返す）
+const pickCoverSrc = (sizes:any) => {
+  const order = [
+    sizes?.s?.avif,
+    sizes?.s?.webp,
+    sizes?.s2x?.avif,
+    sizes?.s2x?.webp,
+    sizes?.l?.avif,
+    sizes?.l?.webp,
+    sizes?.l2x?.avif,
+    sizes?.l2x?.webp,
+  ];
+  for (const src of order) {
+    if (typeof src === 'string' && src) return src;
+  }
+  return '';
+};
+const coverMeta = (r:any) => {
+  const cover = (r && typeof r.cover === 'object') ? r.cover : null;
+  const sizes = cover?.sizes ?? r?.sizes ?? {};
+  const src = (cover && typeof cover.src === 'string' && cover.src)
+    ? cover.src
+    : pickCoverSrc(sizes);
+  const num = (v:any) => (typeof v === 'number' && Number.isFinite(v)) ? v : undefined;
+  const w = num(cover?.w) ?? num(r?.w);
+  const h = num(cover?.h) ?? num(r?.h);
+  return { src, w, h };
+};
 
 // 画像一覧: 新着順（sortKey 降順）→ id
 const imagesSorted = [...(images as any[])].sort((a:any, b:any) => {
@@ -62,19 +88,22 @@ const tabsCenter = layoutAny?.tabs?.align === 'center';
 
           {/* Greedy用: data-w/h/tags を付与し、カード要素に統一 */}
           <div id="grid-images" class="img-grid" role="list">
-            {initialImages.map((it:any) => (
-              <div class="card" data-w={it.w} data-h={it.h} data-tags={(it.tags ?? []).join(',')}>
-                <img
-                  class="img"
-                  src={imgSmall(it)}
-                  alt={`${it.source}`}
-                  loading="lazy"
-                  decoding="async"
-                  width={it.w}
-                  height={it.h}
-                />
-              </div>
-            ))}
+            {initialImages.map((it:any) => {
+              const cover = coverMeta(it);
+              return (
+                <div class="card" data-w={cover.w} data-h={cover.h} data-tags={(it.tags ?? []).join(',')}>
+                  <img
+                    class="img"
+                    src={cover.src}
+                    alt={`${it.source}`}
+                    loading="lazy"
+                    decoding="async"
+                    width={cover.w}
+                    height={cover.h}
+                  />
+                </div>
+              );
+            })}
             </div>
           <div id="sentinel" aria-hidden="true" style="height:1px"></div>
         </section>

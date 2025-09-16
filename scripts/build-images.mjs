@@ -100,6 +100,23 @@ const ms = (t)=> (t>=1000 ? `${(t/1000).toFixed(1)}s` : `${t}ms`);
 const ensureDir = (p)=> fs.mkdirSync(p, { recursive: true });
 const posix = (p)=> p.split(path.sep).join('/');
 const urlFromPub = (abs) => '/' + path.posix.join('assets', posix(path.relative(OUT_BASE, abs)));
+const preferCoverSrc = (sizes) => {
+  if (!sizes || typeof sizes !== 'object') return '';
+  const order = [
+    sizes?.s?.avif,
+    sizes?.s?.webp,
+    sizes?.s2x?.avif,
+    sizes?.s2x?.webp,
+    sizes?.l?.avif,
+    sizes?.l?.webp,
+    sizes?.l2x?.avif,
+    sizes?.l2x?.webp,
+  ];
+  for (const src of order) {
+    if (typeof src === 'string' && src) return src;
+  }
+  return '';
+};
 
 async function getMeta(inPath) {
   try { return await sharp(inPath).rotate().metadata(); }
@@ -218,8 +235,81 @@ for (const rel of inputs) {
 
   // レコード生成（既存の人手項目は温存）
   const keep = current ?? {};
+  const kind = (typeof keep.kind === 'string' && keep.kind) ? keep.kind : 'image';
+  const prevAssetsRaw = Array.isArray(keep.assets)
+    ? keep.assets.filter(a => a && typeof a === 'object')
+    : [];
+  const matchedAsset = prevAssetsRaw.find(a =>
+    (typeof a.id !== 'undefined' && String(a.id) === String(id)) ||
+    (typeof a.source === 'string' && a.source === relPosix)
+  );
+  const assetId = (matchedAsset && typeof matchedAsset.id === 'string' && matchedAsset.id)
+    ? matchedAsset.id
+    : id;
+  const imageAsset = {
+    id: assetId,
+    kind: 'image',
+    source: relPosix,
+    w: meta.width,
+    h: meta.height,
+    lqip,
+    sizes: urls,
+  };
+  let assets = [];
+  if (kind === 'image') {
+    let replaced = false;
+    assets = prevAssetsRaw.map(a => {
+      if (!replaced && ((typeof a.id !== 'undefined' && String(a.id) === String(imageAsset.id))
+        || (typeof a.source === 'string' && a.source === relPosix))) {
+        replaced = true;
+        return {
+          ...a,
+          ...imageAsset,
+          sizes: imageAsset.sizes,
+          w: imageAsset.w,
+          h: imageAsset.h,
+          lqip: imageAsset.lqip,
+          source: imageAsset.source,
+        };
+      }
+      return { ...a };
+    });
+    if (!replaced) assets.push(imageAsset);
+  } else {
+    assets = prevAssetsRaw.length
+      ? prevAssetsRaw.map(a => ({ ...a }))
+      : [imageAsset];
+  }
+
+  const defaultCover = {
+    kind: 'image',
+    assetId: imageAsset.id,
+    src: preferCoverSrc(urls),
+    w: meta.width,
+    h: meta.height,
+    lqip,
+    sizes: urls,
+  };
+  const prevCover = (keep.cover && typeof keep.cover === 'object') ? keep.cover : null;
+  let cover;
+  if (kind === 'image') {
+    cover = { ...(prevCover ?? {}), ...defaultCover, sizes: defaultCover.sizes };
+  } else if (prevCover) {
+    cover = { ...prevCover };
+    if (!('src' in cover) || !cover.src) cover.src = defaultCover.src;
+    if (!('kind' in cover) || !cover.kind) cover.kind = defaultCover.kind;
+    if (!('assetId' in cover) && defaultCover.assetId) cover.assetId = defaultCover.assetId;
+    if (!('sizes' in cover) && defaultCover.sizes) cover.sizes = defaultCover.sizes;
+    if (!('w' in cover) && Number.isFinite(defaultCover.w)) cover.w = defaultCover.w;
+    if (!('h' in cover) && Number.isFinite(defaultCover.h)) cover.h = defaultCover.h;
+    if (!('lqip' in cover) && defaultCover.lqip) cover.lqip = defaultCover.lqip;
+  } else {
+    cover = defaultCover;
+  }
+
   const record = {
     id,
+    kind,
     source: relPosix,
     title: keep.title ?? '',        // 人手で編集OK
     alt: keep.alt ?? '',
@@ -232,6 +322,8 @@ for (const rel of inputs) {
     h: meta.height,
     lqip,
     sizes: urls,
+    cover,
+    assets,
     caption: keep.caption ?? '',
     links: keep.links ?? { products: [], related: [] },
   };
@@ -285,16 +377,26 @@ try {
       if (sa !== sb) return sb - sa; // desc
       return String(a.id).localeCompare(String(b.id));
     })
-    .map(r => ({
-      id: r.id,
-      alt: typeof r.alt === 'string' ? r.alt : '',
-      src: r?.sizes?.s?.avif ?? r?.sizes?.s?.webp ?? r?.sizes?.l?.avif ?? r?.sizes?.l?.webp ?? '',
-      w: r.w, h: r.h,
-      tags: Array.isArray(r.tags) ? r.tags : [],
-      hasProducts: !!(r.links && Array.isArray(r.links.products) && r.links.products.length),
-      relatedCount: (r.links && Array.isArray(r.links.related)) ? r.links.related.length : 0,
-      sortKey: typeof r.sortKey === 'number' ? r.sortKey : Date.parse(r.createdAt || 0)
-    }));
+    .map(r => {
+      const cover = (r && typeof r.cover === 'object') ? r.cover : null;
+      const coverSizes = cover?.sizes ?? r?.sizes;
+      const coverSrc = (cover && typeof cover.src === 'string' && cover.src)
+        ? cover.src
+        : preferCoverSrc(coverSizes);
+      const coverW = (cover && Number.isFinite(cover.w)) ? cover.w : r.w;
+      const coverH = (cover && Number.isFinite(cover.h)) ? cover.h : r.h;
+      return {
+        id: r.id,
+        alt: typeof r.alt === 'string' ? r.alt : '',
+        src: coverSrc,
+        w: coverW,
+        h: coverH,
+        tags: Array.isArray(r.tags) ? r.tags : [],
+        hasProducts: !!(r.links && Array.isArray(r.links.products) && r.links.products.length),
+        relatedCount: (r.links && Array.isArray(r.links.related)) ? r.links.related.length : 0,
+        sortKey: typeof r.sortKey === 'number' ? r.sortKey : Date.parse(r.createdAt || 0)
+      };
+    });
   const outPath = path.join(OUT_ROOT, 'images-index.json');
   fs.writeFileSync(outPath, JSON.stringify(slim, null, 2) + '\n', 'utf-8');
   const emptyAlt = slim.filter(x => !x.alt).length;
