@@ -22,6 +22,9 @@ import "../styles/global.css";
     <title>{title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="おもち要塞 / OmochiForts" />
+    {import.meta.env.PUBLIC_DEPLOY_TARGET === 'prod' && Astro.site && (
+      <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).toString()} />
+    )}
     {import.meta.env.PUBLIC_DEPLOY_TARGET === 'pages' && (
       <>
         <meta name="robots" content="noindex, nofollow, noarchive" />
