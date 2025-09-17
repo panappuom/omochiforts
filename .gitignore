@@ -24,6 +24,10 @@ pnpm-debug.log*
 .idea/
 
 
+# generated artifacts
+_generated/
+
+
 
 # - 正本出力: src/assets/
 # - インデックス: src/data/images.json

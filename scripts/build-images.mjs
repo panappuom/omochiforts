@@ -5,9 +5,10 @@
 //   npm i -D sharp fast-glob ulid
 //
 // 仕様ポイント:
-// - 入力: originalsDir（既定 originals/originals_upscaled、無ければ originals → src/originals）配下の .jpg/.jpeg/.png/.webp/.avif
+// - 入力: originalsDir 配下（既定 originals/originals_upscaled、無ければ originals → src/originals）の
+//         .jpg/.jpeg/.png/.webp/.avif
 // - 出力: public/assets/{s,s2x,l,l2x}/{id}.{avif,webp}   ← 単一ディレクトリに出力
-// - images.json: src/data/images.json を唯一のメタ“真実”とする。既存レコードは人手項目(title/alt/tags等)を温存マージ
+// - images.json: src/data/images.json を唯一のメタ“真実”として読み込みのみ実施（人手項目(title/alt/tags等)を温存マージ）
 // - id: 既存があれば継承。無ければ「ファイル名がULIDなら採用」or「createdAtベースでULID生成」
 // - createdAt: 既存なければ fs.stat.mtime を初期値（後で手修正OK）
 // - 並び順: createdAt → 同時刻なら id（ULID）で安定ソート
@@ -19,6 +20,7 @@ import fg from 'fast-glob';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+import crypto from 'node:crypto';
 import { ulid as makeUlid } from 'ulid';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -29,7 +31,9 @@ const cfg = require('../src/config/site.config.json');
 // ===== 設定 =====
 const IM = cfg.images ?? {};
 const OUT_BASE  = IM.outputDir  ?? 'public/assets';
-const INDEX_JSON = 'src/data/images.json';
+const INDEX_SOURCE = 'src/data/images.json';
+const GENERATED_DIR = '_generated';
+const GENERATED_INDEX = path.join(GENERATED_DIR, 'images.json');
 const CLEAN_OUTPUTS = !!(IM.cleanOutputs ?? false);
 
 const W_S   = IM.smallWidth   ?? 236;
@@ -140,8 +144,24 @@ async function needBuild(src, dst) {
 // 旧 mirrorDir は不要（単一ディレクトリ出力のため削除）
 
 // ===== 既存 index 読み込み（人手項目を保護） =====
+const hasher = (file) => {
+  try {
+    const buf = fs.readFileSync(file);
+    return crypto.createHash('sha256').update(buf).digest('hex');
+  } catch {
+    return null;
+  }
+};
+
+const beforeHash = hasher(INDEX_SOURCE);
+if (beforeHash) {
+  console.log(`src/data/images.json sha256(before): ${beforeHash}`);
+} else {
+  console.warn('src/data/images.json sha256(before): <unavailable>');
+}
+
 let prev = [];
-try { prev = JSON.parse(fs.readFileSync(INDEX_JSON, 'utf-8')); } catch {}
+try { prev = JSON.parse(fs.readFileSync(INDEX_SOURCE, 'utf-8')); } catch {}
 const prevById = new Map(prev.map(r => [r.id, r]));
 const prevBySource = new Map(prev.filter(r => r.source).map(r => [r.source, r]));
 
@@ -340,8 +360,8 @@ outIndex.sort((a,b)=>{
 });
 
 // JSON出力
-ensureDir(path.dirname(INDEX_JSON));
-fs.writeFileSync(INDEX_JSON, JSON.stringify(outIndex, null, 2), 'utf-8');
+ensureDir(GENERATED_DIR);
+fs.writeFileSync(GENERATED_INDEX, JSON.stringify(outIndex, null, 2), 'utf-8');
 
 // （オプション）不要出力のクリーンアップ（index に存在しない id を削除）
 if (CLEAN_OUTPUTS) {
@@ -408,6 +428,18 @@ try {
 }
 
 // まとめ
-console.log(`\n✓ images.json written (${outIndex.length} items)`);
+const afterHash = hasher(INDEX_SOURCE);
+if (beforeHash && afterHash && beforeHash === afterHash) {
+  console.log(`src/data/images.json sha256(after):  ${afterHash}`);
+  console.log('✓ src/data/images.json hash unchanged');
+} else if (!beforeHash && !afterHash) {
+  console.warn('src/data/images.json sha256(after): <unavailable>');
+  console.warn('! src/data/images.json missing (hash unavailable)');
+} else {
+  console.warn(`src/data/images.json sha256(after):  ${afterHash ?? '<unavailable>'}`);
+  console.warn('! src/data/images.json hash changed');
+}
+
+console.log(`\n✓ generated images index → ${GENERATED_INDEX} (${outIndex.length} items)`);
 console.log(`✓ outputs: ${OUT_BASE}`);
 console.log(`✓ made=${made}, skipped=${skipped}, time=${ms(Date.now()-t0)}\n`);

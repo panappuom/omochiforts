@@ -9,6 +9,7 @@
     "astro": "astro",
     "test": "echo \"no tests yet\" && exit 0",
     "build:images": "node scripts/build-images.mjs",
+    "build:media": "node scripts/build-images.mjs",
     "build:staging": "cross-env DEPLOY_TARGET=pages PUBLIC_DEPLOY_TARGET=pages astro build",
     "build:prod": "cross-env DEPLOY_TARGET=prod PUBLIC_DEPLOY_TARGET=prod astro build"
   },
