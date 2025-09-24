@@ -16,15 +16,13 @@
 //
 // 実行: node scripts/build-images.mjs
 
-import fg from 'fast-glob';
 import fs from 'node:fs';
 import path from 'node:path';
-import sharp from 'sharp';
-import { ulid as makeUlid } from 'ulid';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
+import { runStillsPipeline, preferCoverSrc } from './pipeline/stills.mjs';
 const require = createRequire(import.meta.url);
 const cfg = require('../src/config/site.config.json');
 
@@ -98,49 +96,8 @@ function resolveExisting(...candidates) {
   for (const c of candidates) if (fs.existsSync(c)) return c;
   return candidates[0];
 }
-const isUlidLike = (s) => typeof s === 'string' && /^[0-9A-HJKMNP-TV-Z]{26}$/.test(s);
-const fileStem = (p) => path.basename(p, path.extname(p)).replace(/\s+/g, '_');
 const ms = (t)=> (t>=1000 ? `${(t/1000).toFixed(1)}s` : `${t}ms`);
 const ensureDir = (p)=> fs.mkdirSync(p, { recursive: true });
-const posix = (p)=> p.split(path.sep).join('/');
-const urlFromPub = (abs) => '/' + path.posix.join('assets', posix(path.relative(OUT_BASE, abs)));
-const preferCoverSrc = (sizes) => {
-  if (!sizes || typeof sizes !== 'object') return '';
-  const order = [
-    sizes?.s?.avif,
-    sizes?.s?.webp,
-    sizes?.s2x?.avif,
-    sizes?.s2x?.webp,
-    sizes?.l?.avif,
-    sizes?.l?.webp,
-    sizes?.l2x?.avif,
-    sizes?.l2x?.webp,
-  ];
-  for (const src of order) {
-    if (typeof src === 'string' && src) return src;
-  }
-  return '';
-};
-
-async function getMeta(inPath) {
-  try { return await sharp(inPath).rotate().metadata(); }
-  catch { return { width: undefined, height: undefined }; }
-}
-async function lqipData(inPath) {
-  if (!LQIP_ENABLED) return null;
-  try {
-    const buf = await sharp(inPath).rotate().resize({ width: LQIP_SIZE, withoutEnlargement:true }).webp({ quality: LQIP_QUALITY }).toBuffer();
-    return `data:image/webp;base64,${buf.toString('base64')}`;
-  } catch { return null; }
-}
-async function needBuild(src, dst) {
-  if (!fs.existsSync(dst)) return true;
-  if (!REBUILD_IF_NEWER) return false;
-  try {
-    const [ss, ds] = await Promise.all([fs.promises.stat(src), fs.promises.stat(dst)]);
-    return ss.mtimeMs > ds.mtimeMs + 1;
-  } catch { return true; }
-}
 // 旧 mirrorDir は不要（単一ディレクトリ出力のため削除）
 
 function sha256File(p) {
@@ -162,202 +119,27 @@ if (sourceHashBefore) {
 // ===== 既存 index 読み込み（人手項目を保護） =====
 let prev = [];
 try { prev = JSON.parse(fs.readFileSync(INDEX_SOURCE, 'utf-8')); } catch {}
-const prevById = new Map(prev.map(r => [r.id, r]));
-const prevBySource = new Map(prev.filter(r => r.source).map(r => [r.source, r]));
 
-// ===== 入力走査 =====
-const inputs = await fg(['**/*.{jpg,jpeg,png,webp,avif}'], { cwd: ORIGINALS, dot:false, onlyFiles:true });
-if (!inputs.length) {
-  console.log(`No source images found in ${ORIGINALS}`);
+const stillsResult = await runStillsPipeline({
+  originalsDir: ORIGINALS,
+  outputDir: OUT_BASE,
+  prevRecords: prev,
+  formats: FORMATS,
+  widths: { s: W_S, s2x: W_S2, l: W_L, l2x: W_L2 },
+  quality: { small: Q_S, large: Q_L },
+  rebuildIfNewer: REBUILD_IF_NEWER,
+  lqip: { enabled: LQIP_ENABLED, size: LQIP_SIZE, quality: LQIP_QUALITY },
+  publicBasePath: '/assets',
+});
+
+if (stillsResult.aborted) {
   process.exit(0);
 }
 
-// 出力用ディレクトリ
-[DIR_S, DIR_S2, DIR_L, DIR_L2].forEach(ensureDir);
-
-const t0 = Date.now();
-const outIndex = [];
-let made = 0, skipped = 0;
-
-// ===== 変換ループ =====
-for (const rel of inputs) {
-  const inAbs = path.resolve(ORIGINALS, rel);
-  const relPosix = posix(rel);
-  const stem = fileStem(rel);
-
-  // 既存レコードを探索（id一致 or ファイル名一致（移行期））
-  // 既存レコード検索: source 優先 → 旧互換のヒューリスティック
-  let current = prevBySource.get(relPosix) || prevById.get(stem) || prev.find(r =>
-    r.id === stem || r.sizes?.s?.webp?.includes(`/${stem}.webp`)
-  );
-
-  // 基本メタ
-  const stat = fs.statSync(inAbs);
-  const meta = await getMeta(inAbs);
-
-  // createdAt: 既存 or mtime
-  const createdAt = current?.createdAt ?? new Date(stat.mtimeMs).toISOString();
-  // sortKey: 既存の createdAt と比較して維持/更新（新規は createdAt を epoch(ms) に）
-  const prevCreatedAt = current?.createdAt;
-  const prevSortKey = (typeof current?.sortKey === 'number') ? current.sortKey : undefined;
-  const createdEpoch = Date.parse(createdAt || 0);
-  const sortKey = (current
-    ? (prevCreatedAt === createdAt && typeof prevSortKey === 'number')
-        ? prevSortKey
-        : createdEpoch
-    : createdEpoch);
-
-  // id: 既存→継承 / 無ければ (ファイル名がULIDなら採用) or (createdAtでULID生成)
-  const id = current?.id ?? (isUlidLike(stem) ? stem : makeUlid(Date.parse(createdAt)));
-
-  // 出力先
-  const outPaths = {
-    s:  Object.fromEntries(FORMATS.map(f => [f, path.join(DIR_S,  `${id}.${f}`)])),
-    s2x:Object.fromEntries(FORMATS.map(f => [f, path.join(DIR_S2, `${id}.${f}`)])),
-    l:  Object.fromEntries(FORMATS.map(f => [f, path.join(DIR_L,  `${id}.${f}`)])),
-    l2x:Object.fromEntries(FORMATS.map(f => [f, path.join(DIR_L2, `${id}.${f}`)])),
-  };
-
-  // 生成関数
-  async function buildOne(width, dstMap, quality) {
-    for (const fmt of FORMATS) {
-      const dst = dstMap[fmt];
-      if (await needBuild(inAbs, dst)) {
-        const pipe = sharp(inAbs)
-          .rotate()
-          // 長辺を width に収める（縦横どちらでも最大寸法が width 以下になる）
-          .resize({ width, height: width, fit: 'inside', withoutEnlargement: true });
-        if (fmt === 'avif') await pipe.avif({ quality }).toFile(dst);
-        else if (fmt === 'webp') await pipe.webp({ quality }).toFile(dst);
-        else throw new Error(`Unsupported format: ${fmt}`);
-        made++;
-      } else {
-        skipped++;
-      }
-    }
-  }
-
-  await buildOne(W_S,  outPaths.s,  Q_S);
-  await buildOne(W_S2, outPaths.s2x, Q_S);
-  await buildOne(W_L,  outPaths.l,  Q_L);
-  await buildOne(W_L2, outPaths.l2x, Q_L);
-
-  // URL化（/assets/...）
-  const urls = {
-    s:   Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 's',   `${id}.${f}`))])),
-    s2x: Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 's2x', `${id}.${f}`))])),
-    l:   Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 'l',   `${id}.${f}`))])),
-    l2x: Object.fromEntries(FORMATS.map(f => [f, urlFromPub(path.join(OUT_BASE, 'l2x', `${id}.${f}`))])),
-  };
-
-  // LQIP
-  const lqip = await lqipData(inAbs);
-
-  // レコード生成（既存の人手項目は温存）
-  const keep = current ?? {};
-  const kind = (typeof keep.kind === 'string' && keep.kind) ? keep.kind : 'image';
-  const prevAssetsRaw = Array.isArray(keep.assets)
-    ? keep.assets.filter(a => a && typeof a === 'object')
-    : [];
-  const matchedAsset = prevAssetsRaw.find(a =>
-    (typeof a.id !== 'undefined' && String(a.id) === String(id)) ||
-    (typeof a.source === 'string' && a.source === relPosix)
-  );
-  const assetId = (matchedAsset && typeof matchedAsset.id === 'string' && matchedAsset.id)
-    ? matchedAsset.id
-    : id;
-  const imageAsset = {
-    id: assetId,
-    kind: 'image',
-    source: relPosix,
-    w: meta.width,
-    h: meta.height,
-    lqip,
-    sizes: urls,
-  };
-  let assets = [];
-  if (kind === 'image') {
-    let replaced = false;
-    assets = prevAssetsRaw.map(a => {
-      if (!replaced && ((typeof a.id !== 'undefined' && String(a.id) === String(imageAsset.id))
-        || (typeof a.source === 'string' && a.source === relPosix))) {
-        replaced = true;
-        return {
-          ...a,
-          ...imageAsset,
-          sizes: imageAsset.sizes,
-          w: imageAsset.w,
-          h: imageAsset.h,
-          lqip: imageAsset.lqip,
-          source: imageAsset.source,
-        };
-      }
-      return { ...a };
-    });
-    if (!replaced) assets.push(imageAsset);
-  } else {
-    assets = prevAssetsRaw.length
-      ? prevAssetsRaw.map(a => ({ ...a }))
-      : [imageAsset];
-  }
-
-  const defaultCover = {
-    kind: 'image',
-    assetId: imageAsset.id,
-    src: preferCoverSrc(urls),
-    w: meta.width,
-    h: meta.height,
-    lqip,
-    sizes: urls,
-  };
-  const prevCover = (keep.cover && typeof keep.cover === 'object') ? keep.cover : null;
-  let cover;
-  if (kind === 'image') {
-    cover = { ...(prevCover ?? {}), ...defaultCover, sizes: defaultCover.sizes };
-  } else if (prevCover) {
-    cover = { ...prevCover };
-    if (!('src' in cover) || !cover.src) cover.src = defaultCover.src;
-    if (!('kind' in cover) || !cover.kind) cover.kind = defaultCover.kind;
-    if (!('assetId' in cover) && defaultCover.assetId) cover.assetId = defaultCover.assetId;
-    if (!('sizes' in cover) && defaultCover.sizes) cover.sizes = defaultCover.sizes;
-    if (!('w' in cover) && Number.isFinite(defaultCover.w)) cover.w = defaultCover.w;
-    if (!('h' in cover) && Number.isFinite(defaultCover.h)) cover.h = defaultCover.h;
-    if (!('lqip' in cover) && defaultCover.lqip) cover.lqip = defaultCover.lqip;
-  } else {
-    cover = defaultCover;
-  }
-
-  const record = {
-    id,
-    kind,
-    source: relPosix,
-    title: keep.title ?? '',        // 人手で編集OK
-    alt: keep.alt ?? '',
-    series: keep.series ?? [],
-    characters: keep.characters ?? [],
-    tags: keep.tags ?? [],
-    createdAt,                      // 既存優先
-    sortKey,                        // 並び制御用（ms epoch）
-    w: meta.width,
-    h: meta.height,
-    lqip,
-    sizes: urls,
-    cover,
-    assets,
-    caption: keep.caption ?? '',
-    links: keep.links ?? { products: [], related: [] },
-  };
-
-  outIndex.push(record);
-}
-
-// 並び順: createdAt → id（ULID）で安定
-outIndex.sort((a,b)=>{
-  const sa = (typeof a.sortKey === 'number') ? a.sortKey : Date.parse(a.createdAt || 0);
-  const sb = (typeof b.sortKey === 'number') ? b.sortKey : Date.parse(b.createdAt || 0);
-  if (sa !== sb) return sa - sb;
-  return String(a.id).localeCompare(String(b.id));
-});
+const outIndex = stillsResult.records;
+const made = stillsResult.made;
+const skipped = stillsResult.skipped;
+const pipelineDurationMs = stillsResult.durationMs;
 
 // JSON出力
 ensureDir(GENERATED_DIR);
@@ -444,4 +226,4 @@ if (sourceHashAfter) {
 console.log(`\n✓ images.gen.json written (${outIndex.length} items)`);
 console.log(`  → ${GENERATED_INDEX}`);
 console.log(`✓ outputs: ${OUT_BASE}`);
-console.log(`✓ made=${made}, skipped=${skipped}, time=${ms(Date.now()-t0)}\n`);
+console.log(`✓ made=${made}, skipped=${skipped}, time=${ms(pipelineDurationMs)}\n`);
